@@ -1,0 +1,5 @@
+O:\storage\freespace\VisualStudioWorkspace\ProxyServer\ProxyServer\obj\x86\Release\ResolveAssemblyReference.cache
+O:\storage\freespace\VisualStudioWorkspace\ProxyServer\ProxyServer\bin\Release\ProxyServer.exe
+O:\storage\freespace\VisualStudioWorkspace\ProxyServer\ProxyServer\bin\Release\ProxyServer.pdb
+O:\storage\freespace\VisualStudioWorkspace\ProxyServer\ProxyServer\obj\x86\Release\ProxyServer.exe
+O:\storage\freespace\VisualStudioWorkspace\ProxyServer\ProxyServer\obj\x86\Release\ProxyServer.pdb
