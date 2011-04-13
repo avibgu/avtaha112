@@ -34,15 +34,17 @@ namespace ProxyServer
 
             Console.WriteLine("Proxy starts..");
 
-            Console.ReadLine();
-
             while (true)
             {
                 HttpListenerContext context = listener.GetContext();
 
+                Console.WriteLine("listener got context..");
+
                 proxy.setContext(context);
 
                 new Thread(new ThreadStart(proxy.run)).Start();
+
+                Console.WriteLine("context thread created..");
             }
         }
     }
