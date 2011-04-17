@@ -35,7 +35,6 @@ namespace ProxyServer
             return White_list.Contains(ip);
         }
 
-
         static void Main(string[] args)
         {
             Driver driver = new Driver();
@@ -69,24 +68,22 @@ namespace ProxyServer
 
                 proxy.setContext(context);
 
-                string client_ip = context.Request.UserHostAddress;
-
-               if (driver.inBlackList(client_ip))
-                {
-                    Console.WriteLine("Unautorized user {0}", client_ip);
-                    continue;
-                }
-
-                if (!driver.inWhiteList(client_ip))
-                {
-                    Console.Write("Enter Username: ");
-                    string inputLine1 = Console.ReadLine();
-
-                    Console.Write("Enter Password: ");
-                    string inputLine2 = Console.ReadLine();
-
-
-                }
+//                string client_ip = context.Request.UserHostAddress;
+//
+//               if (driver.inBlackList(client_ip))
+//                {
+//                   Console.WriteLine("Unautorized user {0}", client_ip);
+//                    continue;
+//                }
+//
+//                if (!driver.inWhiteList(client_ip))
+//               {
+//                    Console.Write("Enter Username: ");
+//                    string inputLine1 = Console.ReadLine();
+//
+//                    Console.Write("Enter Password: ");
+//                   string inputLine2 = Console.ReadLine();
+//                }
 
                 new Thread(new ThreadStart(proxy.run)).Start();
 
