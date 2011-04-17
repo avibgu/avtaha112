@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Net.Sockets;
 using System.Net;
+using System.IO;
 
 namespace ProxyServer
 {
@@ -17,22 +18,46 @@ namespace ProxyServer
             // TODO:    take the original request from the client to the remote server
             //          and forward it as is to the remote server,
             //          while adding header's values.
+            Uri url = getContext().Request.Url;
 
-            Console.WriteLine("Trying to send response..");
+            string urlStr = "http://" + url.Host + url.LocalPath;
 
-            string response = "<html><body><p>Avi and Shiran Proxy</p></body></html>";
+            Console.WriteLine("URL: " + urlStr);
 
-            //getContext().Response.OutputStream.Write(Encoding.ASCII.GetBytes(response), 0, response.Length);
+            HttpWebRequest HttpWReq = (HttpWebRequest)WebRequest.Create(urlStr);
 
-             byte[] b = Encoding.UTF8.GetBytes(response);
-             getContext().Response.ContentLength64 = b.Length;
-             getContext().Response.OutputStream.Write(b, 0, b.Length);
-             getContext().Response.OutputStream.Close();
+            HttpWReq.Headers.Add("x-forwarded-for", "127.0.0.1");
+            HttpWReq.Headers.Add("proxy-version", "0.17");
 
-            Console.WriteLine("Response has been sent..");
+            HttpWebResponse HttpWResp = (HttpWebResponse)HttpWReq.GetResponse();
 
-            // TODO:    take the response from the remote server
-            //          and forward it as is to the client who initiate the connection.
+            Stream responseStream = HttpWResp.GetResponseStream();
+
+            Encoding encode = System.Text.Encoding.GetEncoding("ascii");
+
+            StreamReader streamReader = new StreamReader(responseStream, encode);
+
+            char[] buffer = new char[100];
+
+            String response = "";
+
+            while (streamReader.Read(buffer, 0, buffer.Length) > 0)
+                response += new String(buffer, 0, buffer.Length);
+
+            byte[] b = Encoding.ASCII.GetBytes(response);
+            //getContext().Response.ContentLength64 = b.Length;
+            getContext().Response.OutputStream.Write(b, 0, b.Length);
+            getContext().Response.OutputStream.Close();
+
+            streamReader.Close();
+            responseStream.Close();
+            HttpWResp.Close();
+
+            //Console.WriteLine("Trying to send response..");
+            //Console.WriteLine("Response has been sent..");
+
+            //TODO:    take the response from the remote server
+            //         and forward it as is to the client who initiate the connection.
 
             return;
         }
