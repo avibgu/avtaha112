@@ -35,9 +35,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AnonProxy.cs" />
+    <Compile Include="AnonProxyFactory.cs" />
     <Compile Include="Driver.cs" />
     <Compile Include="OpenProxy.cs" />
+    <Compile Include="OpenProxyFactory.cs" />
     <Compile Include="Proxy.cs" />
+    <Compile Include="ProxyFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
