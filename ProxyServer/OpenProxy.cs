@@ -35,11 +35,9 @@ namespace ProxyServer
 
             NameValueCollection headers = getContext().Request.Headers;
 
-            PropertyInfo p = headers.GetType().GetProperty("IsReadOnly", BindingFlags.Instance |
-                                                    BindingFlags.IgnoreCase | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-            p.SetValue(headers, false, null);
-
-            NameObjectCollectionBase.KeysCollection keys = HttpWReq.Headers.Keys;
+            //PropertyInfo p = headers.GetType().GetProperty("IsReadOnly", BindingFlags.Instance |
+            //                                        BindingFlags.IgnoreCase | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            //p.SetValue(headers, false, null);
 
             foreach (string key in headers.Keys)
             {
