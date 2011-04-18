@@ -27,10 +27,6 @@ namespace ProxyServer
 
             Uri url = getContext().Request.Url;
 
-            // TODO: download files..
-            if (url.IsFile)
-                return;
-
             string urlStr = "http://" + url.Host + url.LocalPath;
 
             Console.WriteLine("URL: " + urlStr);
@@ -46,16 +42,15 @@ namespace ProxyServer
             getContext().Request.Headers.Add(HttpWReq.Headers);
 
             //  HttpWReq.TransferEncoding = getContext().Request.T;
-            HttpWReq.Accept = getContext().Request.AcceptTypes[0];
+            //  HttpWReq.Accept = getContext().Request.AcceptTypes[0];
             //  HttpWReq.Connection = ;
-            HttpWReq.ContentType= getContext().Request.ContentType;
-            HttpWReq.ContentLength = getContext().Request.ContentLength64;
+            //  HttpWReq.ContentType= getContext().Request.ContentType;
+            //  HttpWReq.ContentLength = getContext().Request.ContentLength64;
             //  HttpWReq.Expect = ;
             //  HttpWReq.IfModifiedSince = ;
             //  HttpWReq.Proxy = ;
             //  HttpWReq.Referer = getContext().Request.UrlReferrer.AbsoluteUri;
             HttpWReq.UserAgent = getContext().Request.UserAgent;
-
 /*
             foreach (string key in headers.Keys)
             {
@@ -65,7 +60,6 @@ namespace ProxyServer
                     HttpWReq.Headers.Add(key, value);
             }
 */
-
             System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
 
             string xForwardedFor = ips.AddressList.GetValue(0).ToString();
@@ -91,7 +85,17 @@ namespace ProxyServer
                 }
             }
 
-            HttpWebResponse HttpWResp = (HttpWebResponse)HttpWReq.GetResponse();
+            HttpWebResponse HttpWResp = null;
+
+            try
+            {
+                HttpWResp = (HttpWebResponse)HttpWReq.GetResponse();
+            }
+            catch
+            {
+                Console.WriteLine("HttpWReq.GetResponse() ERROR");
+                return;
+            }
 
             // take the response from the remote server
             // and forward it as is to the client who initiate the connection.
@@ -102,11 +106,14 @@ namespace ProxyServer
 
             Encoding encode;
             
-            if (String.IsNullOrEmpty(charSet))
-                encode = Encoding.Default;
-
-            else
+            try
+            {
                 encode = Encoding.GetEncoding(charSet);
+            }
+            catch
+            {
+                encode = Encoding.Default;
+            }                
 
             StreamReader streamReader = new StreamReader(responseStream, encode);
 
@@ -114,19 +121,34 @@ namespace ProxyServer
 
             String response = "";
 
-            while (streamReader.Read(buffer, 0, buffer.Length) > 0)
-                response += new String(buffer, 0, buffer.Length);
+            //  while (streamReader.Read(buffer, 0, buffer.Length) > 0)
+            //      response += new String(buffer, 0, buffer.Length);
 
-            byte[] b = Encoding.UTF8.GetBytes(response);
-            getContext().Response.ContentLength64 = HttpWResp.ContentLength;    // TODO: b.Length ...
-            getContext().Response.OutputStream.Write(b, 0, b.Length);
-            getContext().Response.OutputStream.Close();
+            response = streamReader.ReadToEnd();
+
+            byte[] b = System.Text.UTF8Encoding.UTF8.GetBytes(response);
+
+            try
+            {
+                getContext().Response.ContentLength64 = b.Length; // TODO: HttpWResp.ContentLength;
+                getContext().Response.OutputStream.Write(b, 0, b.Length);
+                getContext().Response.OutputStream.Close();
+            }
+            catch
+            {
+                Console.WriteLine("getContext().Response.OutputStream.Write ERROR");
+                return;
+            }
 
             streamReader.Close();
             responseStream.Close();
             HttpWResp.Close();
 
             return;
+        }
+
+        private void downloadFile() {
+            throw new NotImplementedException();
         }
 
         public void setContext(HttpListenerContext context)
