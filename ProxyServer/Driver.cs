@@ -84,8 +84,6 @@ namespace ProxyServer
 //                }
 
                 new Thread(new ThreadStart(proxy.run)).Start();
-
-                Console.WriteLine("context thread created..");
             }
         }
     }
