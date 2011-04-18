@@ -88,8 +88,6 @@ namespace ProxyServer
                 Console.WriteLine("context thread created..");
             }
         }
-
-
     }
 }
 

@@ -19,9 +19,10 @@ namespace ProxyServer
 
         public void run()
         {
-            // TODO:    take the original request from the client to the remote server
-            //          and forward it as is to the remote server,
-            //          while adding header's values.
+            // take the original request from the client to the remote server
+            // and forward it as is to the remote server,
+            // while adding header's values.
+
             Uri url = getContext().Request.Url;
 
             string urlStr = "http://" + url.Host + url.LocalPath;
@@ -34,6 +35,9 @@ namespace ProxyServer
             HttpWReq.Headers.Add("proxy-version", "0.17");
 
             HttpWebResponse HttpWResp = (HttpWebResponse)HttpWReq.GetResponse();
+
+            // take the response from the remote server
+            // and forward it as is to the client who initiate the connection.
 
             Stream responseStream = HttpWResp.GetResponseStream();
 
@@ -51,17 +55,11 @@ namespace ProxyServer
             byte[] b = Encoding.UTF8.GetBytes(response);
             getContext().Response.ContentLength64 = b.Length;
             getContext().Response.OutputStream.Write(b, 0, b.Length);
-            //getContext().Response.OutputStream.Close();
+            getContext().Response.OutputStream.Close();
 
             streamReader.Close();
             responseStream.Close();
             HttpWResp.Close();
-
-            //Console.WriteLine("Trying to send response..");
-            //Console.WriteLine("Response has been sent..");
-
-            //TODO:    take the response from the remote server
-            //         and forward it as is to the client who initiate the connection.
 
             return;
         }
