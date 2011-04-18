@@ -12,6 +12,10 @@ namespace ProxyServer
         private Socket _socket;
         private HttpListenerContext _context;
 
+        public AnonProxy(HttpListenerContext context) {
+            setContext(context);
+        }
+
         public void run()
         {
             return;

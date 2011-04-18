@@ -11,7 +11,11 @@ namespace ProxyServer
     class OpenProxy : Proxy
     {
         private Socket _socket;
-        private  HttpListenerContext _context;
+        private HttpListenerContext _context;
+
+        public OpenProxy(HttpListenerContext context) {
+            setContext(context);
+        }
 
         public void run()
         {
@@ -33,7 +37,7 @@ namespace ProxyServer
 
             Stream responseStream = HttpWResp.GetResponseStream();
 
-            Encoding encode = System.Text.Encoding.GetEncoding("ascii");
+            Encoding encode = System.Text.Encoding.GetEncoding("utf-8");
 
             StreamReader streamReader = new StreamReader(responseStream, encode);
 
@@ -44,10 +48,10 @@ namespace ProxyServer
             while (streamReader.Read(buffer, 0, buffer.Length) > 0)
                 response += new String(buffer, 0, buffer.Length);
 
-            byte[] b = Encoding.ASCII.GetBytes(response);
-            //getContext().Response.ContentLength64 = b.Length;
+            byte[] b = Encoding.UTF8.GetBytes(response);
+            getContext().Response.ContentLength64 = b.Length;
             getContext().Response.OutputStream.Write(b, 0, b.Length);
-            getContext().Response.OutputStream.Close();
+            //getContext().Response.OutputStream.Close();
 
             streamReader.Close();
             responseStream.Close();
