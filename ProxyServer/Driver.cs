@@ -44,13 +44,7 @@ namespace ProxyServer
 
             string inputLine = Console.ReadLine();
 
-            Proxy proxy = null;
-
-            if (inputLine.CompareTo("1") == 0)
-                proxy = new OpenProxy();
-
-            else
-                proxy = new AnonProxy();
+            string proxyType = (inputLine.CompareTo("1") == 0) ? "open" : "anon";
 
             HttpListener listener = new HttpListener();
 
@@ -64,9 +58,13 @@ namespace ProxyServer
             {
                 HttpListenerContext context = listener.GetContext();
 
-                Console.WriteLine("listener got context..");
+                Proxy proxy = null;
 
-                proxy.setContext(context);
+                if (proxyType.CompareTo("open") == 0)
+                    proxy = new OpenProxy(context);
+
+                else
+                    proxy = new AnonProxy(context);
 
 //                string client_ip = context.Request.UserHostAddress;
 //
