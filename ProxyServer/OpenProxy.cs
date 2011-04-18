@@ -65,7 +65,15 @@ namespace ProxyServer
                     HttpWReq.Headers.Add(key, value);
             }
 */
-            HttpWReq.Headers.Add("x-forwarded-for", "127.0.0.1");
+
+            System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+
+            string xForwardedFor = ips.AddressList.GetValue(0).ToString();
+
+            foreach( IPAddress ip in ips.AddressList )
+                xForwardedFor += ", " + ip.ToString();
+
+            HttpWReq.Headers.Add("x-forwarded-for", xForwardedFor);
             HttpWReq.Headers.Add("proxy-version", "0.17");
 
             CookieCollection cookies = getContext().Request.Cookies;
