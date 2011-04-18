@@ -34,6 +34,14 @@ namespace ProxyServer
             HttpWReq.Headers.Add("x-forwarded-for", "127.0.0.1");
             HttpWReq.Headers.Add("proxy-version", "0.17");
 
+            CookieCollection cookies = getContext().Request.Cookies;
+
+            if (null != cookies && cookies.Count > 0) {
+
+                HttpWReq.CookieContainer = new CookieContainer();
+                HttpWReq.CookieContainer.Add(cookies);
+            }
+
             HttpWebResponse HttpWResp = (HttpWebResponse)HttpWReq.GetResponse();
 
             // take the response from the remote server
@@ -41,7 +49,15 @@ namespace ProxyServer
 
             Stream responseStream = HttpWResp.GetResponseStream();
 
-            Encoding encode = System.Text.Encoding.GetEncoding("utf-8");
+            string charSet = HttpWResp.CharacterSet;
+
+            Encoding encode;
+            
+            if (String.IsNullOrEmpty(charSet))
+                encode = Encoding.Default;
+
+            else
+                encode = Encoding.GetEncoding(charSet);
 
             StreamReader streamReader = new StreamReader(responseStream, encode);
 
