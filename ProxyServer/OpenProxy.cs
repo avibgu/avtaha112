@@ -110,7 +110,7 @@ namespace ProxyServer
                 response += new String(buffer, 0, buffer.Length);
 
             byte[] b = Encoding.UTF8.GetBytes(response);
-            getContext().Response.ContentLength64 = b.Length;
+            getContext().Response.ContentLength64 = HttpWResp.ContentLength;    // TODO: b.Length ...
             getContext().Response.OutputStream.Write(b, 0, b.Length);
             getContext().Response.OutputStream.Close();
 
