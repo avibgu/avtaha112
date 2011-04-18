@@ -31,6 +31,9 @@ namespace ProxyServer
 
             HttpWebRequest HttpWReq = (HttpWebRequest)WebRequest.Create(urlStr);
 
+            foreach (HttpRequestHeader header in getContext().Request.Headers)
+                HttpWReq.Headers.Add(header.ToString());
+
             HttpWReq.Headers.Add("x-forwarded-for", "127.0.0.1");
             HttpWReq.Headers.Add("proxy-version", "0.17");
 
