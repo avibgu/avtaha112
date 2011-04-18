@@ -5,6 +5,8 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net;
 using System.IO;
+using System.Collections.Specialized;
+using System.Reflection;
 
 namespace ProxyServer
 {
@@ -31,8 +33,21 @@ namespace ProxyServer
 
             HttpWebRequest HttpWReq = (HttpWebRequest)WebRequest.Create(urlStr);
 
-            foreach (HttpRequestHeader header in getContext().Request.Headers)
-                HttpWReq.Headers.Add(header.ToString());
+            NameValueCollection headers = getContext().Request.Headers;
+
+            PropertyInfo p = headers.GetType().GetProperty("IsReadOnly", BindingFlags.Instance |
+                                                    BindingFlags.IgnoreCase | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            p.SetValue(headers, false, null);
+
+            NameObjectCollectionBase.KeysCollection keys = HttpWReq.Headers.Keys;
+
+            foreach (string key in headers.Keys)
+            {
+                string[] values = headers.GetValues(key);
+
+                foreach (string value in values)
+                    HttpWReq.Headers.Add(key, value);
+            }
 
             HttpWReq.Headers.Add("x-forwarded-for", "127.0.0.1");
             HttpWReq.Headers.Add("proxy-version", "0.17");
