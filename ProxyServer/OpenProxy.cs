@@ -45,6 +45,17 @@ namespace ProxyServer
 */
             getContext().Request.Headers.Add(HttpWReq.Headers);
 
+            //  HttpWReq.TransferEncoding = getContext().Request.T;
+            HttpWReq.Accept = getContext().Request.AcceptTypes[0];
+            //  HttpWReq.Connection = ;
+            HttpWReq.ContentType= getContext().Request.ContentType;
+            HttpWReq.ContentLength = getContext().Request.ContentLength64;
+            //  HttpWReq.Expect = ;
+            //  HttpWReq.IfModifiedSince = ;
+            //  HttpWReq.Proxy = ;
+            //  HttpWReq.Referer = getContext().Request.UrlReferrer.AbsoluteUri;
+            HttpWReq.UserAgent = getContext().Request.UserAgent;
+
 /*
             foreach (string key in headers.Keys)
             {
