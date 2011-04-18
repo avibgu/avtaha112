@@ -27,6 +27,10 @@ namespace ProxyServer
 
             Uri url = getContext().Request.Url;
 
+            // TODO: download files..
+            if (url.IsFile)
+                return;
+
             string urlStr = "http://" + url.Host + url.LocalPath;
 
             Console.WriteLine("URL: " + urlStr);
@@ -34,11 +38,14 @@ namespace ProxyServer
             HttpWebRequest HttpWReq = (HttpWebRequest)WebRequest.Create(urlStr);
 
             NameValueCollection headers = getContext().Request.Headers;
+/*
+            PropertyInfo p = headers.GetType().GetProperty("IsReadOnly", BindingFlags.Instance |
+                                                    BindingFlags.IgnoreCase | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+            p.SetValue(headers, false, null);
+*/
+            getContext().Request.Headers.Add(HttpWReq.Headers);
 
-            //PropertyInfo p = headers.GetType().GetProperty("IsReadOnly", BindingFlags.Instance |
-            //                                        BindingFlags.IgnoreCase | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-            //p.SetValue(headers, false, null);
-
+/*
             foreach (string key in headers.Keys)
             {
                 string[] values = headers.GetValues(key);
@@ -46,16 +53,23 @@ namespace ProxyServer
                 foreach (string value in values)
                     HttpWReq.Headers.Add(key, value);
             }
-
+*/
             HttpWReq.Headers.Add("x-forwarded-for", "127.0.0.1");
             HttpWReq.Headers.Add("proxy-version", "0.17");
 
             CookieCollection cookies = getContext().Request.Cookies;
 
+            HttpWReq.CookieContainer = new CookieContainer();
+
             if (null != cookies && cookies.Count > 0) {
 
-                HttpWReq.CookieContainer = new CookieContainer();
-                HttpWReq.CookieContainer.Add(cookies);
+                foreach (Cookie cookie in cookies) {
+
+                    if (cookie.Domain.Equals(""))
+                        continue;
+
+                    HttpWReq.CookieContainer.Add(cookie);
+                }
             }
 
             HttpWebResponse HttpWResp = (HttpWebResponse)HttpWReq.GetResponse();
