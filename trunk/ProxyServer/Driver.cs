@@ -39,7 +39,7 @@ namespace ProxyServer
 
         public void login(HttpListenerContext context)
         {
-            string response = System.IO.File.ReadAllText("C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(2)\\ProxyServer\\LoginPage.htm");
+            string response = System.IO.File.ReadAllText("..\\..\\LoginPage.htm");
             byte[] b = Encoding.UTF8.GetBytes(response);
             context.Response.ContentLength64 = b.Length;
             context.Response.OutputStream.Write(b, 0, b.Length);
@@ -72,6 +72,7 @@ namespace ProxyServer
             Driver driver = new Driver();
             driver.parseFile("white-list.txt",driver.White_list);
             driver.parseFile("black-list.txt", driver.Black_list);
+
             Console.WriteLine("Choose server state:\n" +
                                 "1. open.\n" +
                                 "2. anonymous.");
@@ -99,7 +100,7 @@ namespace ProxyServer
                 HttpListenerContext context = listener.GetContext();
 
                 Proxy proxy = proxyFactory.getProxy(context);
-
+        
                 string client_ip = context.Request.UserHostAddress;
  /*             if (driver.inBlackList(client_ip))
                 {
