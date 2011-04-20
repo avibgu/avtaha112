@@ -8,6 +8,7 @@ using System.Net;
 using System.IO;
 using System.Security.Cryptography;
 using System.Diagnostics;
+using System.Configuration;
 
 namespace ProxyServer
 {
@@ -19,11 +20,20 @@ namespace ProxyServer
         TripleDESCryptoServiceProvider tDESalg;
         string password;
         List<string> mailList;
+        int X;
+        int Y;
         
         public Driver()
         {
+
+            // read from configuration file
+            string passFile = ConfigurationSettings.AppSettings["password"];
+            StreamReader file = new StreamReader(passFile);
+            password = file.ReadLine();
+            Console.WriteLine("password = " + password);
+            X = Convert.ToInt32(ConfigurationSettings.AppSettings["X"]);
+            Y = Convert.ToInt32(ConfigurationSettings.AppSettings["Y"]);
             mailList = new List<string>();
-            password = "passwordDR0wSS@P6660juht";
             logger = new StreamWriter("..//..//Logger.txt", true);
             bool fileExists = File.Exists("../..//Logger.txt");
             if (!fileExists)
@@ -31,23 +41,10 @@ namespace ProxyServer
             logger.WriteLine("Starting...");
             logger.Flush();
             tDESalg = new TripleDESCryptoServiceProvider();
-            tDESalg.Key = StrToByteArray(password);
+            tDESalg.Key = Encoding.ASCII.GetBytes("passwordDR0wSS@P6660juht");
         }
 
-        public static byte[] StrToByteArray(string str)
-        {
-            System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
-            return encoding.GetBytes(str);
-        }
-
-        public static string ByteArraytoString(byte[] arr)
-        {
-                string str;
-                System.Text.UTF8Encoding enc = new System.Text.UTF8Encoding();
-                str = enc.GetString(arr);
-                return str;
-        }
-
+      
         public void addBlackIp(byte[] site)
         {
             Black_list.Add(site);
@@ -203,9 +200,10 @@ namespace ProxyServer
 
         static void Main(string[] args)
         {
+           
             Driver driver = new Driver();
-            driver.parseFile("white-list.txt",driver.White_list);
-            driver.parseFile("black-list.txt", driver.Black_list);
+          //  driver.parseFile(ConfigurationSettings.AppSettings["white-list"], driver.White_list);
+            driver.parseFile(ConfigurationSettings.AppSettings["black-list"], driver.Black_list);
 
             Console.WriteLine("Choose server state:\n" +
                                 "1. open.\n" +
