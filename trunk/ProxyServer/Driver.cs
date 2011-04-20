@@ -25,14 +25,13 @@ namespace ProxyServer
         
         public Driver()
         {
-
+            
             // read from configuration file
-            string passFile = ConfigurationSettings.AppSettings["password"];
+            string passFile = ConfigurationManager.AppSettings["password"];
             StreamReader file = new StreamReader(passFile);
             password = file.ReadLine();
-            Console.WriteLine("password = " + password);
-            X = Convert.ToInt32(ConfigurationSettings.AppSettings["X"]);
-            Y = Convert.ToInt32(ConfigurationSettings.AppSettings["Y"]);
+            X = Convert.ToInt32(ConfigurationManager.AppSettings["X"]);
+            Y = Convert.ToInt32(ConfigurationManager.AppSettings["Y"]);
             mailList = new List<string>();
             logger = new StreamWriter("..//..//Logger.txt", true);
             bool fileExists = File.Exists("../..//Logger.txt");
@@ -200,10 +199,9 @@ namespace ProxyServer
 
         static void Main(string[] args)
         {
-           
             Driver driver = new Driver();
-          //  driver.parseFile(ConfigurationSettings.AppSettings["white-list"], driver.White_list);
-            driver.parseFile(ConfigurationSettings.AppSettings["black-list"], driver.Black_list);
+            driver.parseFile(ConfigurationManager.AppSettings["white-list"], driver.White_list);
+            driver.parseFile(ConfigurationManager.AppSettings["black-list"], driver.Black_list);
 
             Console.WriteLine("Choose server state:\n" +
                                 "1. open.\n" +
@@ -239,7 +237,7 @@ namespace ProxyServer
                 logger.WriteLine(ip + " is asking for site " + uri);
                 logger.Flush();
 
- /*               if (driver.inBlackList(uri))
+  /*              if (driver.inBlackList(client_uri))
                 {
                    string response = "<HTML><BODY>Unauthorized user</BODY></HTML>";
                    byte[] b = Encoding.ASCII.GetBytes(response);
