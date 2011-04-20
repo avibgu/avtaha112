@@ -7,18 +7,26 @@ using System.Threading;
 using System.Net;
 using System.IO;
 using System.Security.Cryptography;
+using System.Diagnostics;
 
 namespace ProxyServer
 {
     class Driver
     {
+        public static StreamWriter logger;
         List<byte[]> Black_list = new List<byte[]>();
         List<byte[]> White_list = new List<byte[]>();
         string password = "passwordDR0wSS@P6660juht";
         TripleDESCryptoServiceProvider tDESalg;
-
+        
         public Driver()
         {
+            logger = new StreamWriter("..//..//Logger.txt", true);
+            bool fileExists = File.Exists("../..//Logger.txt");
+            if (!fileExists)
+                File.Create("..//..//Logger.txt");
+            logger.WriteLine("Starting...");
+            logger.Flush();
             tDESalg = new TripleDESCryptoServiceProvider();
             tDESalg.Key = StrToByteArray(password);
         }
@@ -223,10 +231,13 @@ namespace ProxyServer
                 HttpListenerContext context = listener.GetContext();
 
                 Proxy proxy = proxyFactory.getProxy(context);
-        
-                byte[] client_ip = EncryptTextToMemory(context.Request.UserHostAddress,driver.tDESalg.Key,driver.tDESalg.IV);
-                byte[] uri = EncryptTextToMemory(context.Request.RawUrl, driver.tDESalg.Key, driver.tDESalg.IV);
-      
+                string ip = context.Request.UserHostAddress;
+                byte[] client_ip = EncryptTextToMemory(ip ,driver.tDESalg.Key,driver.tDESalg.IV);
+                string uri = context.Request.RawUrl;
+                byte[] client_uri = EncryptTextToMemory(uri, driver.tDESalg.Key, driver.tDESalg.IV);
+                logger.WriteLine(ip + " is asking for site " + uri);
+                logger.Flush();
+
  /*               if (driver.inBlackList(uri))
                 {
                    string response = "<HTML><BODY>Unauthorized user</BODY></HTML>";
