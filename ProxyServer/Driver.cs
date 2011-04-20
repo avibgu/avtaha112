@@ -16,11 +16,14 @@ namespace ProxyServer
         public static StreamWriter logger;
         List<byte[]> Black_list = new List<byte[]>();
         List<byte[]> White_list = new List<byte[]>();
-        string password = "passwordDR0wSS@P6660juht";
         TripleDESCryptoServiceProvider tDESalg;
+        string password;
+        List<string> mailList;
         
         public Driver()
         {
+            mailList = new List<string>();
+            password = "passwordDR0wSS@P6660juht";
             logger = new StreamWriter("..//..//Logger.txt", true);
             bool fileExists = File.Exists("../..//Logger.txt");
             if (!fileExists)
