@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Net;
 using System.IO;
+using System.Security.Cryptography;
 
 namespace ProxyServer
 {
@@ -13,6 +14,28 @@ namespace ProxyServer
     {
         List<string> Black_list = new List<string>();
         List<string> White_list = new List<string>();
+        string password = "passwordDR0wSS@P6660juht";
+        TripleDESCryptoServiceProvider tDESalg;
+
+        public Driver()
+        {
+            tDESalg = new TripleDESCryptoServiceProvider();
+            tDESalg.Key = StrToByteArray(password);
+        }
+
+        public static byte[] StrToByteArray(string str)
+        {
+            System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
+            return encoding.GetBytes(str);
+        }
+
+        public static string ByteArraytoString(byte[] arr)
+        {
+                string str;
+                System.Text.UTF8Encoding enc = new System.Text.UTF8Encoding();
+                str = enc.GetString(arr);
+                return str;
+        }
 
         public void addBlackIp(string ip)
         {
@@ -28,7 +51,9 @@ namespace ProxyServer
 
         public bool inBlackList(string ip)
         {
-            return Black_list.Contains(ip);
+            // Encrypt the string to an in-memory buffer.
+            byte[] Data = EncryptTextToMemory(ip, tDESalg.Key, tDESalg.IV);
+            return Black_list.Contains(ByteArraytoString(Data));
         }
 
         public bool inWhiteList(string ip)
@@ -47,6 +72,78 @@ namespace ProxyServer
             //context.Response.OutputStream.Close();
         }
 
+        public static byte[] EncryptTextToMemory(string Data, byte[] Key, byte[] IV)
+        {
+            try
+            {
+                // Create a MemoryStream.
+                MemoryStream mStream = new MemoryStream();
+
+                // Create a CryptoStream using the MemoryStream 
+                // and the passed key and initialization vector (IV).
+                CryptoStream cStream = new CryptoStream(mStream,
+                    new TripleDESCryptoServiceProvider().CreateEncryptor(Key, IV),
+                    CryptoStreamMode.Write);
+
+                // Convert the passed string to a byte array.
+                byte[] toEncrypt = new ASCIIEncoding().GetBytes(Data);
+
+                // Write the byte array to the crypto stream and flush it.
+                cStream.Write(toEncrypt, 0, toEncrypt.Length);
+                cStream.FlushFinalBlock();
+
+                // Get an array of bytes from the 
+                // MemoryStream that holds the 
+                // encrypted data.
+                byte[] ret = mStream.ToArray();
+
+                // Close the streams.
+                cStream.Close();
+                mStream.Close();
+
+                // Return the encrypted buffer.
+                return ret;
+            }
+            catch (CryptographicException e)
+            {
+                Console.WriteLine("A Cryptographic error occurred: {0}", e.Message);
+                return null;
+            }
+
+        }
+
+        public static string DecryptTextFromMemory(byte[] Data, byte[] Key, byte[] IV)
+        {
+            try
+            {
+                // Create a new MemoryStream using the passed 
+                // array of encrypted data.
+                MemoryStream msDecrypt = new MemoryStream(Data);
+
+                // Create a CryptoStream using the MemoryStream 
+                // and the passed key and initialization vector (IV).
+                CryptoStream csDecrypt = new CryptoStream(msDecrypt,
+                    new TripleDESCryptoServiceProvider().CreateDecryptor(Key, IV),
+                    CryptoStreamMode.Read);
+
+                // Create buffer to hold the decrypted data.
+                byte[] fromEncrypt = new byte[Data.Length];
+
+                // Read the decrypted data out of the crypto stream
+                // and place it into the temporary buffer.
+                csDecrypt.Read(fromEncrypt, 0, fromEncrypt.Length);
+
+                //Convert the buffer into a string and return it.
+                return new ASCIIEncoding().GetString(fromEncrypt);
+            }
+            catch (CryptographicException e)
+            {
+                Console.WriteLine("A Cryptographic error occurred: {0}", e.Message);
+                return null;
+            }
+        }
+
+
         public void parseFile(string fileName,List<string> lst)
         {
             try
@@ -57,7 +154,10 @@ namespace ProxyServer
                     string line;
                     while ((line = file.ReadLine()) != null)
                     {
-                          lst.Add(line);
+                          // Encrypt using 3-Des
+                          // Encrypt the string to an in-memory buffer.
+                          byte[] Data = EncryptTextToMemory(line, tDESalg.Key, tDESalg.IV);
+                          lst.Add(ByteArraytoString(Data));
                     }
                 }
             }
@@ -72,7 +172,6 @@ namespace ProxyServer
             Driver driver = new Driver();
             driver.parseFile("white-list.txt",driver.White_list);
             driver.parseFile("black-list.txt", driver.Black_list);
-
             Console.WriteLine("Choose server state:\n" +
                                 "1. open.\n" +
                                 "2. anonymous.");
@@ -102,7 +201,7 @@ namespace ProxyServer
                 Proxy proxy = proxyFactory.getProxy(context);
         
                 string client_ip = context.Request.UserHostAddress;
- /*             if (driver.inBlackList(client_ip))
+                if (driver.inBlackList(client_ip))
                 {
                    string response = "<HTML><BODY>Unauthorized user</BODY></HTML>";
                    byte[] b = Encoding.ASCII.GetBytes(response);
@@ -110,14 +209,14 @@ namespace ProxyServer
                    context.Response.OutputStream.Write(b, 0, b.Length);
                    context.Response.OutputStream.Close();
                     continue;
-                } */
+                } 
 
 //                if (!driver.inWhiteList(client_ip))
 //               {
                 //          driver.login(context);
 //                }
 
-                new Thread(new ThreadStart(proxy.run)).Start();
+                //new Thread(new ThreadStart(proxy.run)).Start();
             }
         }
     }
