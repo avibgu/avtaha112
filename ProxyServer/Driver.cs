@@ -12,8 +12,8 @@ namespace ProxyServer
 {
     class Driver
     {
-        List<string> Black_list = new List<string>();
-        List<string> White_list = new List<string>();
+        List<byte[]> Black_list = new List<byte[]>();
+        List<byte[]> White_list = new List<byte[]>();
         string password = "passwordDR0wSS@P6660juht";
         TripleDESCryptoServiceProvider tDESalg;
 
@@ -37,28 +37,39 @@ namespace ProxyServer
                 return str;
         }
 
-        public void addBlackIp(string ip)
+        public void addBlackIp(byte[] site)
         {
-            Black_list.Add(ip);
+            Black_list.Add(site);
 
         }
 
-        public void addWhiteIp(string ip)
+        public void addWhiteIp(byte[] ip)
         {
             White_list.Add(ip);
 
         }
 
-        public bool inBlackList(string ip)
+        public bool inBlackList(byte[] site)
         {
-            // Encrypt the string to an in-memory buffer.
-            byte[] Data = EncryptTextToMemory(ip, tDESalg.Key, tDESalg.IV);
-            return Black_list.Contains(ByteArraytoString(Data));
+            for (int i=0; i<Black_list.Count; ++i)
+            {
+                if (ByteArraysEqual(Black_list[i],site))
+                    return true;
+            }
+             
+            return false;
+  
         }
 
-        public bool inWhiteList(string ip)
+        public bool inWhiteList(byte[] ip)
         {
-            return White_list.Contains(ip);
+           for (int i=0; i<White_list.Count; ++i)
+            {
+                if (ByteArraysEqual(White_list[i],ip))
+                    return true;
+            }
+             
+            return false;
         }
 
 
@@ -144,7 +155,19 @@ namespace ProxyServer
         }
 
 
-        public void parseFile(string fileName,List<string> lst)
+        public static bool ByteArraysEqual(byte[] b1, byte[] b2)
+        {
+            if (b1 == b2) return true;
+            if (b1 == null || b2 == null) return false;
+            if (b1.Length != b2.Length) return false;
+            for (int i = 0; i < b1.Length; i++)
+            {
+                if (b1[i] != b2[i]) return false;
+            }
+            return true;
+        }
+
+        public void parseFile(string fileName,List<byte[]> lst)
         {
             try
             {
@@ -157,7 +180,7 @@ namespace ProxyServer
                           // Encrypt using 3-Des
                           // Encrypt the string to an in-memory buffer.
                           byte[] Data = EncryptTextToMemory(line, tDESalg.Key, tDESalg.IV);
-                          lst.Add(ByteArraytoString(Data));
+                          lst.Add(Data);
                     }
                 }
             }
@@ -172,6 +195,7 @@ namespace ProxyServer
             Driver driver = new Driver();
             driver.parseFile("white-list.txt",driver.White_list);
             driver.parseFile("black-list.txt", driver.Black_list);
+
             Console.WriteLine("Choose server state:\n" +
                                 "1. open.\n" +
                                 "2. anonymous.");
@@ -200,8 +224,10 @@ namespace ProxyServer
 
                 Proxy proxy = proxyFactory.getProxy(context);
         
-                string client_ip = context.Request.UserHostAddress;
-                if (driver.inBlackList(client_ip))
+                byte[] client_ip = EncryptTextToMemory(context.Request.UserHostAddress,driver.tDESalg.Key,driver.tDESalg.IV);
+                byte[] uri = EncryptTextToMemory(context.Request.RawUrl, driver.tDESalg.Key, driver.tDESalg.IV);
+      
+ /*               if (driver.inBlackList(uri))
                 {
                    string response = "<HTML><BODY>Unauthorized user</BODY></HTML>";
                    byte[] b = Encoding.ASCII.GetBytes(response);
@@ -209,14 +235,14 @@ namespace ProxyServer
                    context.Response.OutputStream.Write(b, 0, b.Length);
                    context.Response.OutputStream.Close();
                     continue;
-                } 
+                } */
 
 //                if (!driver.inWhiteList(client_ip))
 //               {
                 //          driver.login(context);
 //                }
 
-                //new Thread(new ThreadStart(proxy.run)).Start();
+                new Thread(new ThreadStart(proxy.run)).Start();
             }
         }
     }
