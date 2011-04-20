@@ -5,6 +5,7 @@ using System.Text;
 using System.Net.Sockets;
 using System.Threading;
 using System.Net;
+using System.IO;
 
 namespace ProxyServer
 {
@@ -35,9 +36,42 @@ namespace ProxyServer
             return White_list.Contains(ip);
         }
 
+
+        public void login(HttpListenerContext context)
+        {
+            string response = System.IO.File.ReadAllText("C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(2)\\ProxyServer\\LoginPage.htm");
+            byte[] b = Encoding.UTF8.GetBytes(response);
+            context.Response.ContentLength64 = b.Length;
+            context.Response.OutputStream.Write(b, 0, b.Length);
+            //context.Response.Redirect("C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(2)\\ProxyServer\\LoginPage.htm");
+            //context.Response.OutputStream.Close();
+        }
+
+        public void parseFile(string fileName,List<string> lst)
+        {
+            try
+            {
+                using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
+                {
+                    StreamReader file = new StreamReader(fs);
+                    string line;
+                    while ((line = file.ReadLine()) != null)
+                    {
+                          lst.Add(line);
+                    }
+                }
+            }
+            catch (FileNotFoundException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
         static void Main(string[] args)
         {
             Driver driver = new Driver();
+            driver.parseFile("white-list.txt",driver.White_list);
+            driver.parseFile("black-list.txt", driver.Black_list);
             Console.WriteLine("Choose server state:\n" +
                                 "1. open.\n" +
                                 "2. anonymous.");
@@ -66,21 +100,20 @@ namespace ProxyServer
 
                 Proxy proxy = proxyFactory.getProxy(context);
 
-//                string client_ip = context.Request.UserHostAddress;
-//
-//               if (driver.inBlackList(client_ip))
-//                {
-//                   Console.WriteLine("Unautorized user {0}", client_ip);
-//                    continue;
-//                }
-//
+                string client_ip = context.Request.UserHostAddress;
+ /*             if (driver.inBlackList(client_ip))
+                {
+                   string response = "<HTML><BODY>Unauthorized user</BODY></HTML>";
+                   byte[] b = Encoding.ASCII.GetBytes(response);
+                   context.Response.ContentLength64 = b.Length;
+                   context.Response.OutputStream.Write(b, 0, b.Length);
+                   context.Response.OutputStream.Close();
+                    continue;
+                } */
+
 //                if (!driver.inWhiteList(client_ip))
 //               {
-//                    Console.Write("Enter Username: ");
-//                    string inputLine1 = Console.ReadLine();
-//
-//                    Console.Write("Enter Password: ");
-//                   string inputLine2 = Console.ReadLine();
+                //          driver.login(context);
 //                }
 
                 new Thread(new ThreadStart(proxy.run)).Start();
