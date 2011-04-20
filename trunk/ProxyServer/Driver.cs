@@ -33,7 +33,7 @@ namespace ProxyServer
             X = Convert.ToInt32(ConfigurationManager.AppSettings["X"]);
             Y = Convert.ToInt32(ConfigurationManager.AppSettings["Y"]);
             mailList = new List<string>();
-            logger = new StreamWriter("..//..//Logger.txt", true);
+            logger = new StreamWriter("..//..//Logger.txt", false);
             bool fileExists = File.Exists("../..//Logger.txt");
             if (!fileExists)
                 File.Create("..//..//Logger.txt");
@@ -86,7 +86,8 @@ namespace ProxyServer
             byte[] b = Encoding.UTF8.GetBytes(response);
             context.Response.ContentLength64 = b.Length;
             context.Response.OutputStream.Write(b, 0, b.Length);
-            //context.Response.Redirect("C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(2)\\ProxyServer\\LoginPage.htm");
+         //   context.Response.Redirect("..\\..\\LoginPage.htm");
+            Console.ReadLine();
             //context.Response.OutputStream.Close();
         }
 
@@ -236,6 +237,7 @@ namespace ProxyServer
                 byte[] client_uri = EncryptTextToMemory(uri, driver.tDESalg.Key, driver.tDESalg.IV);
                 logger.WriteLine(ip + " is asking for site " + uri);
                 logger.Flush();
+           //     driver.login(context);
 
   /*              if (driver.inBlackList(client_uri))
                 {
