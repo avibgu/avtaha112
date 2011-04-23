@@ -22,10 +22,7 @@ namespace ProxyServer
 {
     interface Proxy
     {
-        void setSocket(Socket socket);
-
         void run();
-
         void setContext(HttpListenerContext context);
     }
 }
