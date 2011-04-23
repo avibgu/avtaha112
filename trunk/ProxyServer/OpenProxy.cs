@@ -146,6 +146,7 @@ namespace ProxyServer
 
                 foreach (Cookie cookie in cookies) {
 
+                    //TODO - fix it..
                     if (cookie.Domain.Equals(""))
                         continue;
 
