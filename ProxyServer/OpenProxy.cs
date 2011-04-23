@@ -36,6 +36,9 @@ namespace ProxyServer
 
             setHttpWReq((HttpWebRequest)WebRequest.Create(urlStr));
 
+            //  Set GET/POST method
+            getHttpWReq().Method = getContext().Request.HttpMethod;
+
             //  Sets the headers
             setTheHeaders();
 
@@ -146,9 +149,9 @@ namespace ProxyServer
 
                 foreach (Cookie cookie in cookies) {
 
-                    //TODO - fix it..
+                    // TODO - fix it..
                     if (cookie.Domain.Equals(""))
-                        continue;
+                        cookie.Domain = "127.0.0.1";
 
                     getHttpWReq().CookieContainer.Add(cookie);
                 }
