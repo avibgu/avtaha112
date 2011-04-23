@@ -123,17 +123,23 @@ namespace ProxyServer
 
             getHttpWReq().CookieContainer = new CookieContainer();
 
+            string cookiesStr = "";
+
             if (null != cookies && cookies.Count > 0) {
 
                 foreach (Cookie cookie in cookies) {
 
-                    // TODO - fix it..
-                    if (cookie.Domain.Equals(""))
-                        cookie.Domain = "127.0.0.1";
+                    cookiesStr += ";" + cookie.Value;
 
-                    getHttpWReq().CookieContainer.Add(cookie);
+                    if (cookie.Domain.Equals(""))
+                        cookie.Domain = "example.com";
+
+               //     getHttpWReq().CookieContainer.Add(cookie);
                 }
             }
+
+            if ( !cookiesStr.Equals(""))
+                getHttpWReq().Headers.Add("Cookie", cookiesStr.Substring(1))
         }
 
         public void setContext(HttpListenerContext context){
