@@ -138,8 +138,8 @@ namespace ProxyServer
                 }
             }
 
-            if ( !cookiesStr.Equals(""))
-                getHttpWReq().Headers.Add("Cookie", cookiesStr.Substring(1))
+            if (!cookiesStr.Equals(""))
+                getHttpWReq().Headers.Add("Cookie", cookiesStr.Substring(1));
         }
 
         public void setContext(HttpListenerContext context){
