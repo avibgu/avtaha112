@@ -12,11 +12,14 @@ namespace ProxyServer
 {
     class OpenProxy : Proxy
     {
-        private Socket _socket;
         private HttpListenerContext _context;
+        private HttpWebRequest _httpWReq;
+        private HttpWebResponse _httpWResp;
 
         public OpenProxy(HttpListenerContext context) {
             setContext(context);
+            setHttpWReq(null);
+            setHttpWResp(null);
         }
 
         public void run()
@@ -31,87 +34,39 @@ namespace ProxyServer
 
             Console.WriteLine("URL: " + urlStr);
 
-            HttpWebRequest HttpWReq = (HttpWebRequest)WebRequest.Create(urlStr);
+            setHttpWReq((HttpWebRequest)WebRequest.Create(urlStr));
 
-            NameValueCollection headers = getContext().Request.Headers;
-/*
-            PropertyInfo p = headers.GetType().GetProperty("IsReadOnly", BindingFlags.Instance |
-                                                    BindingFlags.IgnoreCase | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-            p.SetValue(headers, false, null);
-*/
-            getContext().Request.Headers.Add(HttpWReq.Headers);
+            //  Sets the headers
+            setTheHeaders();
 
-            //  HttpWReq.TransferEncoding = getContext().Request.T;
-            //  HttpWReq.Accept = getContext().Request.AcceptTypes[0];
-            //  HttpWReq.Connection = ;
-            //  HttpWReq.ContentType= getContext().Request.ContentType;
-            //  HttpWReq.ContentLength = getContext().Request.ContentLength64;
-            //  HttpWReq.Expect = ;
-            //  HttpWReq.IfModifiedSince = ;
-            //  HttpWReq.Proxy = ;
-            //  HttpWReq.Referer = getContext().Request.UrlReferrer.AbsoluteUri;
-            HttpWReq.UserAgent = getContext().Request.UserAgent;
-/*
-            foreach (string key in headers.Keys)
-            {
-                string[] values = headers.GetValues(key);
+            //  Sets the cookies
+            setTheCookies();
 
-                foreach (string value in values)
-                    HttpWReq.Headers.Add(key, value);
+            try{
+
+                setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
             }
-*/
-            System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+            catch(Exception e){
 
-            string xForwardedFor = ips.AddressList.GetValue(0).ToString();
-
-            foreach( IPAddress ip in ips.AddressList )
-                xForwardedFor += ", " + ip.ToString();
-
-            HttpWReq.Headers.Add("x-forwarded-for", xForwardedFor);
-            HttpWReq.Headers.Add("proxy-version", "0.17");
-
-            CookieCollection cookies = getContext().Request.Cookies;
-
-            HttpWReq.CookieContainer = new CookieContainer();
-
-            if (null != cookies && cookies.Count > 0) {
-
-                foreach (Cookie cookie in cookies) {
-
-                    if (cookie.Domain.Equals(""))
-                        continue;
-
-                    HttpWReq.CookieContainer.Add(cookie);
-                }
-            }
-
-            HttpWebResponse HttpWResp = null;
-
-            try
-            {
-                HttpWResp = (HttpWebResponse)HttpWReq.GetResponse();
-            }
-            catch
-            {
-                Console.WriteLine("HttpWReq.GetResponse() ERROR");
+                Console.WriteLine("setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse()) ERROR:\n" + e.Message);
                 return;
             }
 
             // take the response from the remote server
             // and forward it as is to the client who initiate the connection.
 
-            Stream responseStream = HttpWResp.GetResponseStream();
+            Stream responseStream = getHttpWResp().GetResponseStream();
 
-            string charSet = HttpWResp.CharacterSet;
+            string charSet = getHttpWResp().CharacterSet;
 
             Encoding encode;
             
-            try
-            {
+            try{
+
                 encode = Encoding.GetEncoding(charSet);
             }
-            catch
-            {
+            catch{
+
                 encode = Encoding.Default;
             }                
 
@@ -121,54 +76,106 @@ namespace ProxyServer
 
             String response = "";
 
-            //  while (streamReader.Read(buffer, 0, buffer.Length) > 0)
-            //      response += new String(buffer, 0, buffer.Length);
-
             response = streamReader.ReadToEnd();
 
             byte[] b = System.Text.UTF8Encoding.UTF8.GetBytes(response);
 
             try
             {
-                getContext().Response.ContentLength64 = b.Length; // TODO: HttpWResp.ContentLength;
+                getContext().Response.ContentLength64 = b.Length;
                 getContext().Response.OutputStream.Write(b, 0, b.Length);
                 getContext().Response.OutputStream.Close();
             }
-            catch
-            {
-                Console.WriteLine("getContext().Response.OutputStream.Write ERROR");
+            catch(Exception e){
+
+                Console.WriteLine("getContext().Response.OutputStream.Write(b, 0, b.Length) ERROR:\n" + e.Message);
                 return;
             }
 
             streamReader.Close();
             responseStream.Close();
-            HttpWResp.Close();
+            getHttpWResp().Close();
 
             return;
         }
 
-        private void downloadFile() {
-            throw new NotImplementedException();
+        /// <summary>
+        /// 
+        /// </summary>
+        private void setTheHeaders() {
+
+            //  User-Agent:
+            getHttpWReq().UserAgent = getContext().Request.UserAgent;
+
+            //  Accept:
+            string[] acceptTypes = getContext().Request.AcceptTypes;
+
+            string acceptTypesStr = "";
+
+            foreach (string type in acceptTypes)
+                acceptTypesStr += "," + type;
+
+            getHttpWReq().Accept = acceptTypesStr.Substring(1);
+
+            //  x-forwarded-for:
+            System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+
+            string xForwardedFor = "";
+
+            foreach (IPAddress ip in ips.AddressList)
+                xForwardedFor = ip.ToString() + "," + xForwardedFor;
+
+            xForwardedFor = ips.AddressList.GetValue(ips.AddressList.Length - 1).ToString() + ", " + xForwardedFor;
+
+            getHttpWReq().Headers.Add("x-forwarded-for", xForwardedFor);
+
+            //  proxy-version:
+            getHttpWReq().Headers.Add("proxy-version", "0.17");
         }
 
-        public void setContext(HttpListenerContext context)
-        {
+        /// <summary>
+        /// 
+        /// </summary>
+        private void setTheCookies() {
+
+            CookieCollection cookies = getContext().Request.Cookies;
+
+            getHttpWReq().CookieContainer = new CookieContainer();
+
+            if (null != cookies && cookies.Count > 0) {
+
+                foreach (Cookie cookie in cookies) {
+
+                    if (cookie.Domain.Equals(""))
+                        continue;
+
+                    getHttpWReq().CookieContainer.Add(cookie);
+                }
+            }
+        }
+
+        public void setContext(HttpListenerContext context){
             _context = context;
         }
 
-        public HttpListenerContext getContext()
-        {
+        public HttpListenerContext getContext(){
             return _context;
         }
 
-        public void setSocket(Socket socket)
-        {
-            _socket = socket;
+        public void setHttpWReq(HttpWebRequest httpWReq) {
+            _httpWReq = httpWReq;
         }
 
-        public Socket getSocket()
-        {
-            return _socket;
+        public HttpWebRequest getHttpWReq() {
+            return _httpWReq;
+        }
+
+        public void setHttpWResp(HttpWebResponse httpWResp) {
+            _httpWResp = httpWResp;
+        }
+
+        public HttpWebResponse getHttpWResp(){
+            return _httpWResp;
         }
     }
 }
