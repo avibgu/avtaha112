@@ -13,28 +13,27 @@ namespace ProxyServer
     class OpenProxy : Proxy
     {
         private HttpListenerContext _context;
+        private Uri _url;
         private HttpWebRequest _httpWReq;
         private HttpWebResponse _httpWResp;
 
         public OpenProxy(HttpListenerContext context) {
             setContext(context);
+            setUrl(null);
             setHttpWReq(null);
             setHttpWResp(null);
         }
 
         public void run()
         {
-            // take the original request from the client to the remote server
-            // and forward it as is to the remote server,
-            // while adding header's values.
+            /*
+             * take the original request from the client to the remote server
+             * and forward it as is to the remote server,
+             * while adding header's values.
+             */
 
-            Uri url = getContext().Request.Url;
-
-            string urlStr = "http://" + url.Host + url.LocalPath;
-
-            Console.WriteLine("URL: " + urlStr);
-
-            setHttpWReq((HttpWebRequest)WebRequest.Create(urlStr));
+            //  Get URL and create Web Request
+            getUrlAndCreateWebRequest();
 
             //  Set GET/POST method
             getHttpWReq().Method = getContext().Request.HttpMethod;
@@ -45,39 +44,36 @@ namespace ProxyServer
             //  Sets the cookies
             setTheCookies();
 
-            try{
+            // Forward the request
+            if (!forwardRequest()) return;
 
-                setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
-            }
-            catch(Exception e){
+            /*
+             * take the response from the remote server
+             * and forward it as is to the client who initiated the connection.
+             */
 
-                Console.WriteLine("setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse()) ERROR:\n" + e.Message);
-                return;
-            }
+            // Get Response and Forward it
+            getResponseAndForwardIt();
 
-            // take the response from the remote server
-            // and forward it as is to the client who initiated the connection.
-
-            int numOfBytes = 0;
-
-            Byte[] buffer = new Byte[32];
-
-            Stream responseStream = getHttpWResp().GetResponseStream();
-
-            while ((numOfBytes = responseStream.Read(buffer, 0, 32)) != 0) {
-
-                try {
-
-                    getContext().Response.OutputStream.Write(buffer, 0, numOfBytes);
-                }
-                catch (Exception e) {
-
-                    Console.WriteLine("getContext().Response.OutputStream.Write(b, 0, b.Length) ERROR:\n" + e.Message);
-                    return;
-                }
-            }
-
+            // Close Connections..
             getContext().Response.OutputStream.Close();
+            getHttpWResp().Close();
+
+            return;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void getUrlAndCreateWebRequest() {
+
+            _url = getContext().Request.Url;
+
+            string urlStr = "http://" + _url.Host + _url.LocalPath;
+
+            Console.WriteLine("URL: " + urlStr);
+
+            setHttpWReq((HttpWebRequest)WebRequest.Create(urlStr));
         }
 
         /// <summary>
@@ -123,23 +119,52 @@ namespace ProxyServer
 
             getHttpWReq().CookieContainer = new CookieContainer();
 
-            string cookiesStr = "";
+            if (null != cookies && cookies.Count > 0)
+                foreach (Cookie cookie in cookies)
+                    getHttpWReq().CookieContainer.Add(_url,cookie);
+        }
 
-            if (null != cookies && cookies.Count > 0) {
+        /// <summary>
+        /// 
+        /// </summary>
+        private bool forwardRequest() {
 
-                foreach (Cookie cookie in cookies) {
+            try {
 
-                    cookiesStr += ";" + cookie.Value;
+                setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
+            }
+            catch (Exception e) {
 
-                    if (cookie.Domain.Equals(""))
-                        cookie.Domain = "example.com";
-
-               //     getHttpWReq().CookieContainer.Add(cookie);
-                }
+                Console.WriteLine("setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse()) ERROR:\n" + e.Message);
+                return false;
             }
 
-            if (!cookiesStr.Equals(""))
-                getHttpWReq().Headers.Add("Cookie", cookiesStr.Substring(1));
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void getResponseAndForwardIt() {
+
+            int numOfBytes = 0;
+
+            Byte[] buffer = new Byte[32];
+
+            Stream responseStream = getHttpWResp().GetResponseStream();
+
+            while ((numOfBytes = responseStream.Read(buffer, 0, 32)) != 0) {
+
+                try {
+
+                    getContext().Response.OutputStream.Write(buffer, 0, numOfBytes);
+                }
+                catch (Exception e) {
+
+                    Console.WriteLine("getContext().Response.OutputStream.Write(b, 0, b.Length) ERROR:\n" + e.Message);
+                    return;
+                }
+            }
         }
 
         public void setContext(HttpListenerContext context){
@@ -148,6 +173,14 @@ namespace ProxyServer
 
         public HttpListenerContext getContext(){
             return _context;
+        }
+
+        public void setUrl(Uri url) {
+            _url = url;
+        }
+
+        public Uri getUrl() {
+            return _url;
         }
 
         public void setHttpWReq(HttpWebRequest httpWReq) {
