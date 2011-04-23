@@ -56,50 +56,28 @@ namespace ProxyServer
             }
 
             // take the response from the remote server
-            // and forward it as is to the client who initiate the connection.
+            // and forward it as is to the client who initiated the connection.
+
+            int numOfBytes = 0;
+
+            Byte[] buffer = new Byte[32];
 
             Stream responseStream = getHttpWResp().GetResponseStream();
 
-            string charSet = getHttpWResp().CharacterSet;
+            while ((numOfBytes = responseStream.Read(buffer, 0, 32)) != 0) {
 
-            Encoding encode;
-            
-            try{
+                try {
 
-                encode = Encoding.GetEncoding(charSet);
-            }
-            catch{
+                    getContext().Response.OutputStream.Write(buffer, 0, numOfBytes);
+                }
+                catch (Exception e) {
 
-                encode = Encoding.Default;
-            }                
-
-            StreamReader streamReader = new StreamReader(responseStream, encode);
-
-            char[] buffer = new char[100];
-
-            String response = "";
-
-            response = streamReader.ReadToEnd();
-
-            byte[] b = System.Text.UTF8Encoding.UTF8.GetBytes(response);
-
-            try
-            {
-                getContext().Response.ContentLength64 = b.Length;
-                getContext().Response.OutputStream.Write(b, 0, b.Length);
-                getContext().Response.OutputStream.Close();
-            }
-            catch(Exception e){
-
-                Console.WriteLine("getContext().Response.OutputStream.Write(b, 0, b.Length) ERROR:\n" + e.Message);
-                return;
+                    Console.WriteLine("getContext().Response.OutputStream.Write(b, 0, b.Length) ERROR:\n" + e.Message);
+                    return;
+                }
             }
 
-            streamReader.Close();
-            responseStream.Close();
-            getHttpWResp().Close();
-
-            return;
+            getContext().Response.OutputStream.Close();
         }
 
         /// <summary>
