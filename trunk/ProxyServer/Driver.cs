@@ -220,7 +220,7 @@ namespace ProxyServer
 
             HttpListener listener = new HttpListener();
 
-            listener.Prefixes.Add("http://*:" + args[0] + "/");
+            listener.Prefixes.Add("http://*:" + "8080" + "/");
 
             listener.Start();
 
