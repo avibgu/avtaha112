@@ -15,8 +15,8 @@ namespace ProxyServer
     class Driver
     {
         public static StreamWriter logger;
-        List<byte[]> Black_list = new List<byte[]>();
-        List<byte[]> White_list = new List<byte[]>();
+        List<string> Black_list = new List<string>();
+        List<string> White_list = new List<string>();
         TripleDESCryptoServiceProvider tDESalg;
         string password;
         List<string> mailList;
@@ -41,26 +41,31 @@ namespace ProxyServer
             logger.Flush();
             tDESalg = new TripleDESCryptoServiceProvider();
             tDESalg.Key = Encoding.ASCII.GetBytes("passwordDR0wSS@P6660juht");
+            tDESalg.IV = new Byte[] { 75, 220, 255, 151, 65, 212, 209, 162 };
         }
 
-      
-        public void addBlackIp(byte[] site)
+        public TripleDESCryptoServiceProvider getCrypto()
+        {
+            return tDESalg;
+        }
+
+        public void addBlackIp(string site)
         {
             Black_list.Add(site);
-
+            
         }
 
-        public void addWhiteIp(byte[] ip)
+        public void addWhiteIp(string ip)
         {
             White_list.Add(ip);
 
         }
 
-        public bool inBlackList(byte[] site)
+        public bool inBlackList(string site)
         {
             for (int i=0; i<Black_list.Count; ++i)
             {
-                if (ByteArraysEqual(Black_list[i],site))
+                if (Black_list[i].Equals(site))
                     return true;
             }
              
@@ -68,11 +73,11 @@ namespace ProxyServer
   
         }
 
-        public bool inWhiteList(byte[] ip)
+        public bool inWhiteList(string ip)
         {
            for (int i=0; i<White_list.Count; ++i)
             {
-                if (ByteArraysEqual(White_list[i],ip))
+                if (White_list[i].Equals(ip))
                     return true;
             }
              
@@ -175,20 +180,16 @@ namespace ProxyServer
             return true;
         }
 
-        public void parseFile(string fileName,List<byte[]> lst)
+        public void parseFile(string fileString,List<string> lst)
         {
             try
             {
-                using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
+                using (StringReader reader = new StringReader(fileString))
                 {
-                    StreamReader file = new StreamReader(fs);
                     string line;
-                    while ((line = file.ReadLine()) != null)
+                    while ((line = reader.ReadLine()) != null)
                     {
-                          // Encrypt using 3-Des
-                          // Encrypt the string to an in-memory buffer.
-                          byte[] Data = EncryptTextToMemory(line, tDESalg.Key, tDESalg.IV);
-                          lst.Add(Data);
+                        lst.Add(line);
                     }
                 }
             }
@@ -196,14 +197,77 @@ namespace ProxyServer
             {
                 Console.WriteLine(ex.Message);
             }
+
+    
         }
 
+        /// <summary>
+        /// Encrypts a file and saves the output to a new file.
+        /// </summary>
+        /// <param name="inputFile">The file to encrypt.</param>
+        /// <param name="outputFile">File to save encrypted version.</param>
+        private void EncryptFile(string inputFile, string outputFile)
+        {
+            
+            // Get filestream for input file.
+            using (var inputStream =
+               new FileStream(inputFile, FileMode.Open, FileAccess.Read))
+            {
+                // Get filestream for output file.
+                using (var outputStream =
+                   new FileStream(outputFile, FileMode.Create, FileAccess.Write))
+                {
+                    // Create an encryption stream.
+                    using (var cryptoStream =
+                       new CryptoStream(outputStream,
+                          getCrypto().CreateEncryptor(), CryptoStreamMode.Write))
+                    {
+                        // Copy the input file stream to the encryption stream.
+                        inputStream.CopyTo(cryptoStream);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Decrypts the specified file and returns the contents.
+        /// </summary>
+        /// <param name="inputFile">The file to decrypt.</param>
+        /// <returns>Contents of the file.</returns>
+        private string DecryptFile(string inputFile)
+        {
+
+            // Get FileInfo. Check if the file is empty or not/
+            FileInfo fi = new FileInfo(ConfigurationManager.AppSettings["white-list"]);
+            if (fi.Length == 0)
+                return "";
+
+            // Get filestream for input file.
+            using (var inputStream =
+               new FileStream(inputFile, FileMode.Open, FileAccess.Read))
+            {
+                // Create an encryption stream.
+                using (var cryptoStream =
+                   new CryptoStream(inputStream,
+                      getCrypto().CreateDecryptor(), CryptoStreamMode.Read))
+                {
+                    using (var reader = new StreamReader(cryptoStream))
+                    {
+                        return reader.ReadToEnd(); 
+                              
+                    }
+                }
+            }
+        }
         static void Main(string[] args)
         {
             Driver driver = new Driver();
-            driver.parseFile(ConfigurationManager.AppSettings["white-list"], driver.White_list);
-            driver.parseFile(ConfigurationManager.AppSettings["black-list"], driver.Black_list);
+            // driver.EncryptFile("C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(5)\\ProxyServer\\bin\\Debug\\b.txt", "C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(5)\\ProxyServer\\bin\\Debug\\black-list.txt");
 
+            // Decrypt the lists and parse them to the application lists.
+            driver.parseFile(driver.DecryptFile(ConfigurationManager.AppSettings["white-list"]), driver.White_list);
+            driver.parseFile(driver.DecryptFile(ConfigurationManager.AppSettings["black-list"]), driver.Black_list);
+            Console.WriteLine(driver.White_list[0]);
             Console.WriteLine("Choose server state:\n" +
                                 "1. open.\n" +
                                 "2. anonymous.");
@@ -220,7 +284,7 @@ namespace ProxyServer
 
             HttpListener listener = new HttpListener();
 
-            listener.Prefixes.Add("http://*:" + "8080" + "/");
+            listener.Prefixes.Add("http://*:" + args[0] + "/");
 
             listener.Start();
 
@@ -231,15 +295,16 @@ namespace ProxyServer
                 HttpListenerContext context = listener.GetContext();
 
                 Proxy proxy = proxyFactory.getProxy(context);
-                string ip = context.Request.UserHostAddress;
-                byte[] client_ip = EncryptTextToMemory(ip ,driver.tDESalg.Key,driver.tDESalg.IV);
+                Uri url = context.Request.Url;
+                string ipWithPort = context.Request.UserHostAddress;
+                string ip = ipWithPort.Substring(0, ipWithPort.IndexOf(':'));
                 string uri = context.Request.RawUrl;
-                byte[] client_uri = EncryptTextToMemory(uri, driver.tDESalg.Key, driver.tDESalg.IV);
+
                 logger.WriteLine(ip + " is asking for site " + uri);
                 logger.Flush();
-           //     driver.login(context);
+   
 
-  /*              if (driver.inBlackList(client_uri))
+                if (driver.inBlackList(uri))
                 {
                    string response = "<HTML><BODY>Unauthorized user</BODY></HTML>";
                    byte[] b = Encoding.ASCII.GetBytes(response);
@@ -247,12 +312,12 @@ namespace ProxyServer
                    context.Response.OutputStream.Write(b, 0, b.Length);
                    context.Response.OutputStream.Close();
                     continue;
-                } */
+                }
 
-//                if (!driver.inWhiteList(client_ip))
-//               {
-                //          driver.login(context);
-//                }
+                if (!driver.inWhiteList(ip))
+               {
+                   driver.login(context);
+               }
 
                 new Thread(new ThreadStart(proxy.run)).Start();
             }
