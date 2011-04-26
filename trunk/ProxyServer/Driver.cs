@@ -19,7 +19,7 @@ namespace ProxyServer
         List<string> White_list = new List<string>();
         TripleDESCryptoServiceProvider tDESalg;
         string password;
-        List<string> mailList;
+        public static List<string> mailList = new List<string>();
         int X;
         int Y;
         
@@ -268,8 +268,8 @@ namespace ProxyServer
         static void Main(string[] args)
         {
             Driver driver = new Driver();
-            driver.EncryptFile("C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(5)\\ProxyServer\\bin\\Debug\\b.txt", "C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(5)\\ProxyServer\\bin\\Debug\\black-list.txt");
-            driver.EncryptFile("C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(5)\\ProxyServer\\bin\\Debug\\a.txt", "C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(5)\\ProxyServer\\bin\\Debug\\white-list.txt");
+            driver.EncryptFile("..\\..\\b.txt", "black-list.txt");
+            driver.EncryptFile("..\\..\\a.txt", "white-list.txt");
             // Decrypt the lists and parse them to the application lists.
             driver.parseFile(driver.DecryptFile(ConfigurationManager.AppSettings["white-list"]), driver.White_list);
             driver.parseFile(driver.DecryptFile(ConfigurationManager.AppSettings["black-list"]), driver.Black_list);
