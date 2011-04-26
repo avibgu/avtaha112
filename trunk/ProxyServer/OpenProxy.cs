@@ -56,8 +56,8 @@ namespace ProxyServer
             getResponseAndForwardIt();
 
             // Close Connections..
-            getContext().Response.OutputStream.Close();
-            getHttpWResp().Close();
+            try { getContext().Response.OutputStream.Close(); } catch {}
+            try { getHttpWResp().Close(); } catch {}
 
             return;
         }
