@@ -65,7 +65,7 @@ namespace ProxyServer
         {
             for (int i=0; i<Black_list.Count; ++i)
             {
-                if (Black_list[i].Equals(site))
+                 if (Black_list[i].Contains(site) )
                     return true;
             }
              
@@ -180,6 +180,12 @@ namespace ProxyServer
             return true;
         }
 
+        /// <summary> 
+        /// Parse the given file to the given list.
+        /// Insert each line in the file to another location in the list.
+        /// </summary>
+        /// <param name="fileString"> The string to parse.</param>
+        /// <param name="lst">The list to insert into.</param>
         public void parseFile(string fileString,List<string> lst)
         {
             try
@@ -262,12 +268,11 @@ namespace ProxyServer
         static void Main(string[] args)
         {
             Driver driver = new Driver();
-            // driver.EncryptFile("C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(5)\\ProxyServer\\bin\\Debug\\b.txt", "C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(5)\\ProxyServer\\bin\\Debug\\black-list.txt");
-
+            driver.EncryptFile("C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(5)\\ProxyServer\\bin\\Debug\\b.txt", "C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(5)\\ProxyServer\\bin\\Debug\\black-list.txt");
+            driver.EncryptFile("C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(5)\\ProxyServer\\bin\\Debug\\a.txt", "C:\\Users\\shiran\\Documents\\Visual Studio 2010\\Projects\\ProxyServer(5)\\ProxyServer\\bin\\Debug\\white-list.txt");
             // Decrypt the lists and parse them to the application lists.
             driver.parseFile(driver.DecryptFile(ConfigurationManager.AppSettings["white-list"]), driver.White_list);
             driver.parseFile(driver.DecryptFile(ConfigurationManager.AppSettings["black-list"]), driver.Black_list);
-            Console.WriteLine(driver.White_list[0]);
             Console.WriteLine("Choose server state:\n" +
                                 "1. open.\n" +
                                 "2. anonymous.");
@@ -293,16 +298,17 @@ namespace ProxyServer
             while (true)
             {
                 HttpListenerContext context = listener.GetContext();
-
                 Proxy proxy = proxyFactory.getProxy(context);
                 Uri url = context.Request.Url;
                 string ipWithPort = context.Request.UserHostAddress;
+                // Get the request ip without the port. to the logger.
                 string ip = ipWithPort.Substring(0, ipWithPort.IndexOf(':'));
+                // Get the request URL.
                 string uri = context.Request.RawUrl;
 
+                // Write thw request
                 logger.WriteLine(ip + " is asking for site " + uri);
                 logger.Flush();
-   
 
                 if (driver.inBlackList(uri))
                 {
@@ -311,7 +317,7 @@ namespace ProxyServer
                    context.Response.ContentLength64 = b.Length;
                    context.Response.OutputStream.Write(b, 0, b.Length);
                    context.Response.OutputStream.Close();
-                    continue;
+                   continue;
                 }
 
                 if (!driver.inWhiteList(ip))
