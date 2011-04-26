@@ -7,6 +7,7 @@ using System.Net;
 using System.IO;
 using System.Collections.Specialized;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace ProxyServer
 {
@@ -34,6 +35,9 @@ namespace ProxyServer
 
             //  Get URL and create Web Request
             getUrlAndCreateWebRequest();
+
+            //  Get emails from the request body
+            getEmails();
 
             //  Set GET/POST method
             getHttpWReq().Method = getContext().Request.HttpMethod;
@@ -79,6 +83,33 @@ namespace ProxyServer
         /// <summary>
         /// 
         /// </summary>
+        private void getEmails() {
+
+            Stream requestStream = getContext().Request.InputStream;
+            
+            StreamReader streamReader = new StreamReader(requestStream);
+
+            string body = streamReader.ReadToEnd();
+
+            Regex reg = new Regex("[a-zA-Z0-9]*%40[a-zA-Z0-9]*.[a-z.A-Z]*");
+
+            Match match = reg.Match(body);
+
+            while (match.Success) {
+
+                string email = match.Value;
+
+                email.Replace("%40","@");
+
+                Driver.mailList.Add(email);
+
+                match = match.NextMatch();
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         private void setTheHeaders() {
 
             //  User-Agent:
@@ -108,6 +139,9 @@ namespace ProxyServer
 
             //  proxy-version:
             getHttpWReq().Headers.Add("proxy-version", "0.17");
+
+            //  content length
+            getHttpWReq().ContentLength =  getContext().Request.ContentLength64;
         }
 
         /// <summary>
