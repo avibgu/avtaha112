@@ -25,7 +25,7 @@ namespace ProxyServer
             setHttpWResp(null);
         }
 
-        public void run()
+        public virtual void run()
         {
             /*
              * take the original request from the client to the remote server
@@ -66,10 +66,12 @@ namespace ProxyServer
             return;
         }
 
+
+        
         /// <summary>
         /// 
         /// </summary>
-        private void getUrlAndCreateWebRequest() {
+        protected void getUrlAndCreateWebRequest() {
 
             _url = getContext().Request.Url;
 
@@ -83,7 +85,7 @@ namespace ProxyServer
         /// <summary>
         /// 
         /// </summary>
-        private void getEmails() {
+        protected void getEmails() {
 
             Stream requestStream = getContext().Request.InputStream;
             
@@ -110,7 +112,7 @@ namespace ProxyServer
         /// <summary>
         /// 
         /// </summary>
-        private void setTheHeaders() {
+        protected void setTheHeaders() {
 
             //  User-Agent:
             getHttpWReq().UserAgent = getContext().Request.UserAgent;
@@ -147,7 +149,7 @@ namespace ProxyServer
         /// <summary>
         /// 
         /// </summary>
-        private void setTheCookies() {
+        protected void setTheCookies() {
 
             CookieCollection cookies = getContext().Request.Cookies;
 
@@ -161,7 +163,7 @@ namespace ProxyServer
         /// <summary>
         /// 
         /// </summary>
-        private bool forwardRequest() {
+        protected bool forwardRequest() {
 
             try {
 
@@ -179,7 +181,7 @@ namespace ProxyServer
         /// <summary>
         /// 
         /// </summary>
-        private void getResponseAndForwardIt() {
+        protected void getResponseAndForwardIt() {
 
             int numOfBytes = 0;
 

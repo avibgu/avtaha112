@@ -87,15 +87,20 @@ namespace ProxyServer
 
         public void login(HttpListenerContext context)
         {
-            string response = System.IO.File.ReadAllText("..\\..\\LoginPage.htm");
-            byte[] b = Encoding.UTF8.GetBytes(response);
-            context.Response.ContentLength64 = b.Length;
-            context.Response.OutputStream.Write(b, 0, b.Length);
-         //   context.Response.Redirect("..\\..\\LoginPage.htm");
-            Console.ReadLine();
-            //context.Response.OutputStream.Close();
-        }
+            /*   string response = System.IO.File.ReadAllText("..\\..\\LoginPage.htm");
+               byte[] b = Encoding.UTF8.GetBytes(response);
+               context.Response.ContentLength64 = b.Length;
+               context.Response.OutputStream.Write(b, 0, b.Length);
+            //   context.Response.Redirect("..\\..\\LoginPage.htm");
+               Console.ReadLine();
+               //context.Response.OutputStream.Close();*/
+            HttpListenerBasicIdentity identity = (HttpListenerBasicIdentity)context.User.Identity;
 
+            if (!identity.IsAuthenticated)
+            {
+                string username = identity.Name;
+            }
+        }
         public static byte[] EncryptTextToMemory(string Data, byte[] Key, byte[] IV)
         {
             try
@@ -268,8 +273,8 @@ namespace ProxyServer
         static void Main(string[] args)
         {
             Driver driver = new Driver();
-            driver.EncryptFile("..\\..\\b.txt", "black-list.txt");
-            driver.EncryptFile("..\\..\\a.txt", "white-list.txt");
+            driver.EncryptFile("b.txt", "black-list.txt");
+            driver.EncryptFile("a.txt", "white-list.txt");
             // Decrypt the lists and parse them to the application lists.
             driver.parseFile(driver.DecryptFile(ConfigurationManager.AppSettings["white-list"]), driver.White_list);
             driver.parseFile(driver.DecryptFile(ConfigurationManager.AppSettings["black-list"]), driver.Black_list);
@@ -290,7 +295,7 @@ namespace ProxyServer
             HttpListener listener = new HttpListener();
 
             listener.Prefixes.Add("http://*:" + args[0] + "/");
-
+          //  listener.AuthenticationSchemes = AuthenticationSchemes.Basic;
             listener.Start();
 
             Console.WriteLine("Proxy starts..");
@@ -320,10 +325,21 @@ namespace ProxyServer
                    continue;
                 }
 
-                if (!driver.inWhiteList(ip))
+                if (context.User == null)
+                {
+                    Console.WriteLine("No user!");
+                }
+                else
+                {
+                    Console.WriteLine(context.User.Identity == null);
+                    HttpListenerBasicIdentity identity = (HttpListenerBasicIdentity)context.User.Identity;
+                    Console.WriteLine("Name = {0}; password = {1}", identity.Name, identity.Password);
+                }
+
+               /* if (!driver.inWhiteList(ip))
                {
                    driver.login(context);
-               }
+               }*/
 
                 new Thread(new ThreadStart(proxy.run)).Start();
             }
