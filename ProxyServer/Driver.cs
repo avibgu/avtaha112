@@ -14,10 +14,12 @@ namespace ProxyServer
 {
     class Driver
     {
+        public static StreamWriter white;
+        public static StreamWriter black;
         public static StreamWriter logger;
         List<string> Black_list = new List<string>();
         List<string> White_list = new List<string>();
-        TripleDESCryptoServiceProvider tDESalg;
+        public static TripleDESCryptoServiceProvider tDESalg;
         string password;
         public static List<string> mailList = new List<string>();
         int X;
@@ -52,12 +54,17 @@ namespace ProxyServer
         public void addBlackIp(string site)
         {
             Black_list.Add(site);
+            black.WriteLine(System.Text.ASCIIEncoding.ASCII.GetString(EncryptTextToMemory(site)));
+            black.Flush();
             
         }
 
         public void addWhiteIp(string ip)
         {
+            
             White_list.Add(ip);
+            white.WriteLine(System.Text.ASCIIEncoding.ASCII.GetString(EncryptTextToMemory(ip)));
+            white.Flush();
 
         }
 
@@ -87,21 +94,14 @@ namespace ProxyServer
 
         public void login(HttpListenerContext context)
         {
-            /*   string response = System.IO.File.ReadAllText("..\\..\\LoginPage.htm");
+               string response = System.IO.File.ReadAllText("..\\..\\LoginPage.htm");
                byte[] b = Encoding.UTF8.GetBytes(response);
                context.Response.ContentLength64 = b.Length;
                context.Response.OutputStream.Write(b, 0, b.Length);
-            //   context.Response.Redirect("..\\..\\LoginPage.htm");
-               Console.ReadLine();
-               //context.Response.OutputStream.Close();*/
-            HttpListenerBasicIdentity identity = (HttpListenerBasicIdentity)context.User.Identity;
-
-            if (!identity.IsAuthenticated)
-            {
-                string username = identity.Name;
-            }
+               context.Response.OutputStream.Close();
+          
         }
-        public static byte[] EncryptTextToMemory(string Data, byte[] Key, byte[] IV)
+        public static byte[] EncryptTextToMemory(string Data)
         {
             try
             {
@@ -111,7 +111,7 @@ namespace ProxyServer
                 // Create a CryptoStream using the MemoryStream 
                 // and the passed key and initialization vector (IV).
                 CryptoStream cStream = new CryptoStream(mStream,
-                    new TripleDESCryptoServiceProvider().CreateEncryptor(Key, IV),
+                    new TripleDESCryptoServiceProvider().CreateEncryptor(tDESalg.Key,tDESalg.IV),
                     CryptoStreamMode.Write);
 
                 // Convert the passed string to a byte array.
@@ -141,7 +141,7 @@ namespace ProxyServer
 
         }
 
-        public static string DecryptTextFromMemory(byte[] Data, byte[] Key, byte[] IV)
+        public static string DecryptTextFromMemory(byte[] Data)
         {
             try
             {
@@ -152,7 +152,7 @@ namespace ProxyServer
                 // Create a CryptoStream using the MemoryStream 
                 // and the passed key and initialization vector (IV).
                 CryptoStream csDecrypt = new CryptoStream(msDecrypt,
-                    new TripleDESCryptoServiceProvider().CreateDecryptor(Key, IV),
+                    new TripleDESCryptoServiceProvider().CreateDecryptor(tDESalg.Key,tDESalg.IV),
                     CryptoStreamMode.Read);
 
                 // Create buffer to hold the decrypted data.
@@ -236,7 +236,9 @@ namespace ProxyServer
                         // Copy the input file stream to the encryption stream.
                         inputStream.CopyTo(cryptoStream);
                     }
+                    outputStream.Close();
                 }
+                inputStream.Close();
             }
         }
 
@@ -247,7 +249,7 @@ namespace ProxyServer
         /// <returns>Contents of the file.</returns>
         private string DecryptFile(string inputFile)
         {
-
+            string ans = "";
             // Get FileInfo. Check if the file is empty or not/
             FileInfo fi = new FileInfo(ConfigurationManager.AppSettings["white-list"]);
             if (fi.Length == 0)
@@ -264,20 +266,86 @@ namespace ProxyServer
                 {
                     using (var reader = new StreamReader(cryptoStream))
                     {
-                        return reader.ReadToEnd(); 
+                        
+                        ans= reader.ReadToEnd(); 
                               
                     }
+
+                }
+                inputStream.Close();
+                return ans;
+            }
+
+        }
+
+        public void EncryptFile2(string inputFile, StreamWriter outputFile)
+        {
+
+            using (outputFile)
+            {
+                string line;
+                StreamReader input = new StreamReader(inputFile);
+                line = input.ReadLine();
+
+                while (line != null)
+                {
+                     //  outputFile.WriteLine("hello");
+                    outputFile.WriteLine(System.Text.ASCIIEncoding.Unicode.GetString(EncryptTextToMemory(line)));
+                    outputFile.Flush();
+                    line = input.ReadLine();
+
+
+                }
+               
+            }
+            
+
+        }
+
+        public void DecryptFileToList(string inputFile, List<string> lst)
+        {
+            using (StreamReader input = new StreamReader(inputFile))
+            {
+                string line;
+                string dec;
+
+                line = input.ReadLine();
+                
+                while (line != null)
+                {
+                    
+                    dec = DecryptTextFromMemory(System.Text.ASCIIEncoding.Unicode.GetBytes(line));
+                    lst.Add(dec);
+                    line = input.ReadLine();
+
+
                 }
             }
+            
         }
+
         static void Main(string[] args)
         {
             Driver driver = new Driver();
-            driver.EncryptFile("b.txt", "black-list.txt");
-            driver.EncryptFile("a.txt", "white-list.txt");
-            // Decrypt the lists and parse them to the application lists.
-            driver.parseFile(driver.DecryptFile(ConfigurationManager.AppSettings["white-list"]), driver.White_list);
-            driver.parseFile(driver.DecryptFile(ConfigurationManager.AppSettings["black-list"]), driver.Black_list);
+
+            // Create the encrypted files.
+
+            // black = new StreamWriter("black-list.txt", false);
+           //  driver.EncryptFile2("b.txt", black);
+             white = new StreamWriter("white-list.txt", false);
+            driver.EncryptFile2("a.txt", white);
+               white.Close();
+          //     black.Close();
+              
+
+            driver.DecryptFileToList("black-list.txt", driver.Black_list);
+            driver.DecryptFileToList("white-list.txt", driver.White_list);
+         
+            white = new StreamWriter("white-list.txt", true);
+        
+            black = new StreamWriter("black-list.txt", true);
+
+              
             Console.WriteLine("Choose server state:\n" +
                                 "1. open.\n" +
                                 "2. anonymous.");
@@ -295,7 +363,7 @@ namespace ProxyServer
             HttpListener listener = new HttpListener();
 
             listener.Prefixes.Add("http://*:" + args[0] + "/");
-          //  listener.AuthenticationSchemes = AuthenticationSchemes.Basic;
+         
             listener.Start();
 
             Console.WriteLine("Proxy starts..");
@@ -311,10 +379,33 @@ namespace ProxyServer
                 // Get the request URL.
                 string uri = context.Request.RawUrl;
 
+
+                Console.WriteLine("URI = " + uri);
+                Stream requestStream = context.Request.InputStream;
+                StreamReader streamReader = new StreamReader(requestStream);
+                string body = streamReader.ReadToEnd();
+                Console.WriteLine(body);
+
+                Uri reference = context.Request.UrlReferrer;
+                if (reference != null)
+                {
+                    Console.WriteLine("reference = " + reference);
+                    string refStr = reference.ToString();
+                    int num1 = refStr.IndexOf("password=");
+                    if (num1 > 0)
+                    {
+                        Console.WriteLine("num1 = " + num1);
+                        Console.WriteLine("length = " + refStr.Length);
+                        refStr = refStr.Substring(0,50);
+                        int num2 = refStr.IndexOf("&");
+                        Console.WriteLine("refstr = " + refStr);
+                    }
+                }
+               
                 // Write thw request
                 logger.WriteLine(ip + " is asking for site " + uri);
                 logger.Flush();
-
+               
                 if (driver.inBlackList(uri))
                 {
                    string response = "<HTML><BODY>Unauthorized user</BODY></HTML>";
@@ -325,23 +416,13 @@ namespace ProxyServer
                    continue;
                 }
 
-                if (context.User == null)
-                {
-                    Console.WriteLine("No user!");
-                }
-                else
-                {
-                    Console.WriteLine(context.User.Identity == null);
-                    HttpListenerBasicIdentity identity = (HttpListenerBasicIdentity)context.User.Identity;
-                    Console.WriteLine("Name = {0}; password = {1}", identity.Name, identity.Password);
-                }
-
-               /* if (!driver.inWhiteList(ip))
+              
+              /*  if (!driver.inWhiteList(ip))
                {
                    driver.login(context);
-               }*/
-
-                new Thread(new ThreadStart(proxy.run)).Start();
+               }
+                else*/
+                   new Thread(new ThreadStart(proxy.run)).Start();
             }
         }
     }
