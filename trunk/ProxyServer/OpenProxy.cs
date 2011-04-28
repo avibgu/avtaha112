@@ -39,6 +39,9 @@ namespace ProxyServer
             //  Get emails from the request body
             getEmails();
 
+            //  Set Default Credentials
+            getHttpWReq().Credentials = CredentialCache.DefaultCredentials;
+
             //  Set GET/POST method
             getHttpWReq().Method = getContext().Request.HttpMethod;
 
@@ -75,7 +78,11 @@ namespace ProxyServer
 
             _url = getContext().Request.Url;
 
-            string urlStr = "http://" + _url.Host + _url.LocalPath;
+            string urlStr = _url.OriginalString;
+            
+            int index = urlStr.IndexOf(":8080");
+
+            urlStr = urlStr.Substring(0, index) + urlStr.Substring(index + 5);
 
             Console.WriteLine("URL: " + urlStr);
 
@@ -144,6 +151,9 @@ namespace ProxyServer
 
             //  content length
             getHttpWReq().ContentLength =  getContext().Request.ContentLength64;
+
+            //  content type
+            getHttpWReq().ContentType = "application/x-www-form-urlencoded";
         }
 
         /// <summary>
