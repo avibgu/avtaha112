@@ -36,9 +36,7 @@ namespace ProxyServer
             //  Sets the headers
             setTheHeaders();
 
-            //  Sets the cookies
-            setTheCookies();
-
+        
             // Forward the request
             if (!forwardRequest()) return;
 
