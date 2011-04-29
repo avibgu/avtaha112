@@ -99,18 +99,23 @@ namespace ProxyServer
             StreamReader streamReader = new StreamReader(requestStream);
 
             string body = streamReader.ReadToEnd();
+            string headers = getContext().Request.Headers.ToString();
+            string url = getContext().Request.RawUrl;
+        
+            string stringToCheck = body + " " + headers + " " + url;
 
             Regex reg = new Regex("[a-zA-Z0-9]*%40[a-zA-Z0-9]*.[a-z.A-Z]*");
 
-            Match match = reg.Match(body);
+            Match match = reg.Match(stringToCheck);
 
             while (match.Success) {
-
                 string email = match.Value;
 
-                email.Replace("%40","@");
-
-                Driver.mailList.Add(email);
+                lock (Driver.mailList)
+                {
+                    Driver.mailList.WriteLine(email);
+                    Driver.mailList.Flush();
+                }
 
                 match = match.NextMatch();
             }
