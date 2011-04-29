@@ -382,7 +382,6 @@ namespace ProxyServer
 
             while (true)
             {
-                Console.WriteLine("PPPPPPPPPPPPPPPPP");
                 HttpListenerContext context = listener.GetContext();
                 Proxy proxy = proxyFactory.getProxy(context);
                 Uri url = context.Request.Url;
@@ -392,13 +391,7 @@ namespace ProxyServer
                 // Get the request URL.
                 string uri = context.Request.RawUrl;
                 string findPassword="";
-
-                Console.WriteLine("URI = " + uri);
-                Stream requestStream = context.Request.InputStream;
-                StreamReader streamReader = new StreamReader(requestStream);
-                string body = streamReader.ReadToEnd();
-                Console.WriteLine(body);
-
+             
                 // Check if we got login request
                 int num1 = uri.IndexOf("loginPassword=");
                 if (num1 > 0)
@@ -408,7 +401,6 @@ namespace ProxyServer
                     if (findPassword.Equals(driver.loginPassword))
                     {
                         driver.addWhiteIp(ip);
-                        Console.WriteLine("ADDDDDED");
                         sendResponse("Successfull login :)",context);
                     }
                     else
