@@ -24,6 +24,7 @@ namespace ProxyServer
         public static List<string> mailList = new List<string>();
         int X;
         int Y;
+        string loginPassword;
         
         public Driver()
         {
@@ -34,6 +35,7 @@ namespace ProxyServer
             password = file.ReadLine();
             X = Convert.ToInt32(ConfigurationManager.AppSettings["X"]);
             Y = Convert.ToInt32(ConfigurationManager.AppSettings["Y"]);
+            loginPassword = ConfigurationManager.AppSettings["loginPassword"];
             mailList = new List<string>();
             logger = new StreamWriter("..//..//Logger.txt", false);
             bool fileExists = File.Exists("../..//Logger.txt");
@@ -99,6 +101,7 @@ namespace ProxyServer
                context.Response.ContentLength64 = b.Length;
                context.Response.OutputStream.Write(b, 0, b.Length);
                context.Response.OutputStream.Close();
+       
           
         }
         public static byte[] EncryptTextToMemory(string Data)
@@ -324,6 +327,15 @@ namespace ProxyServer
             
         }
 
+        public static void sendResponse(string strToResponse,HttpListenerContext context){
+                   string response = "<HTML><BODY>"+strToResponse+"</BODY></HTML>";
+                   byte[] b = Encoding.ASCII.GetBytes(response);
+                   context.Response.ContentLength64 = b.Length;
+                   context.Response.OutputStream.Write(b, 0, b.Length);
+                   context.Response.OutputStream.Close();
+        }
+
+
         static void Main(string[] args)
         {
             Driver driver = new Driver();
@@ -370,6 +382,7 @@ namespace ProxyServer
 
             while (true)
             {
+                Console.WriteLine("PPPPPPPPPPPPPPPPP");
                 HttpListenerContext context = listener.GetContext();
                 Proxy proxy = proxyFactory.getProxy(context);
                 Uri url = context.Request.Url;
@@ -378,7 +391,7 @@ namespace ProxyServer
                 string ip = ipWithPort.Substring(0, ipWithPort.IndexOf(':'));
                 // Get the request URL.
                 string uri = context.Request.RawUrl;
-
+                string findPassword="";
 
                 Console.WriteLine("URI = " + uri);
                 Stream requestStream = context.Request.InputStream;
@@ -386,21 +399,23 @@ namespace ProxyServer
                 string body = streamReader.ReadToEnd();
                 Console.WriteLine(body);
 
-                Uri reference = context.Request.UrlReferrer;
-                if (reference != null)
+                // Check if we got login request
+                int num1 = uri.IndexOf("loginPassword=");
+                if (num1 > 0)
                 {
-                    Console.WriteLine("reference = " + reference);
-                    string refStr = reference.ToString();
-                    int num1 = refStr.IndexOf("password=");
-                    if (num1 > 0)
+                    findPassword = uri;
+                    findPassword = findPassword.Substring(num1+14);
+                    if (findPassword.Equals(driver.loginPassword))
                     {
-                        Console.WriteLine("num1 = " + num1);
-                        Console.WriteLine("length = " + refStr.Length);
-                        refStr = refStr.Substring(0,50);
-                        int num2 = refStr.IndexOf("&");
-                        Console.WriteLine("refstr = " + refStr);
+                        driver.addWhiteIp(ip);
+                        Console.WriteLine("ADDDDDED");
+                        sendResponse("Successfull login :)",context);
                     }
+                    else
+                        sendResponse("Unsuccessfull login :(",context);
+                    continue;
                 }
+             
                
                 // Write thw request
                 logger.WriteLine(ip + " is asking for site " + uri);
@@ -408,20 +423,16 @@ namespace ProxyServer
                
                 if (driver.inBlackList(uri))
                 {
-                   string response = "<HTML><BODY>Unauthorized user</BODY></HTML>";
-                   byte[] b = Encoding.ASCII.GetBytes(response);
-                   context.Response.ContentLength64 = b.Length;
-                   context.Response.OutputStream.Write(b, 0, b.Length);
-                   context.Response.OutputStream.Close();
-                   continue;
+                    sendResponse("Unauthorized user", context);
+                    continue;
                 }
 
               
-              /*  if (!driver.inWhiteList(ip))
+                if (!driver.inWhiteList(ip))
                {
                    driver.login(context);
                }
-                else*/
+                else
                    new Thread(new ThreadStart(proxy.run)).Start();
             }
         }
