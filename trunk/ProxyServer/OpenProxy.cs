@@ -129,7 +129,7 @@ namespace ProxyServer
 
             string acceptTypesStr = "";
 
-            foreach (string type in acceptTypes)
+            foreach (string type in acceptTypes) 
                 acceptTypesStr += "," + type;
 
             getHttpWReq().Accept = acceptTypesStr.Substring(1);
