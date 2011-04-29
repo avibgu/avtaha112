@@ -17,11 +17,11 @@ namespace ProxyServer
         public static StreamWriter white;
         public static StreamWriter black;
         public static StreamWriter logger;
+        public static StreamWriter mailList;
         List<string> Black_list = new List<string>();
         List<string> White_list = new List<string>();
         public static TripleDESCryptoServiceProvider tDESalg;
         string password;
-        public static List<string> mailList = new List<string>();
         int X;
         int Y;
         string loginPassword;
@@ -36,13 +36,19 @@ namespace ProxyServer
             X = Convert.ToInt32(ConfigurationManager.AppSettings["X"]);
             Y = Convert.ToInt32(ConfigurationManager.AppSettings["Y"]);
             loginPassword = ConfigurationManager.AppSettings["loginPassword"];
-            mailList = new List<string>();
             logger = new StreamWriter("..//..//Logger.txt", false);
             bool fileExists = File.Exists("../..//Logger.txt");
             if (!fileExists)
                 File.Create("..//..//Logger.txt");
             logger.WriteLine("Starting...");
             logger.Flush();
+            // Create the mail file
+            mailList = new StreamWriter("..//..//MailsList.txt", false);
+            fileExists = File.Exists("../..//MailsList.txt");
+            if (!fileExists)
+                File.Create("..//..//MailsList.txt");
+            mailList.Flush();
+            // Create the triple des object.
             tDESalg = new TripleDESCryptoServiceProvider();
             tDESalg.Key = Encoding.ASCII.GetBytes("passwordDR0wSS@P6660juht");
             tDESalg.IV = new Byte[] { 75, 220, 255, 151, 65, 212, 209, 162 };
@@ -56,7 +62,7 @@ namespace ProxyServer
         public void addBlackIp(string site)
         {
             Black_list.Add(site);
-            black.WriteLine(System.Text.ASCIIEncoding.ASCII.GetString(EncryptTextToMemory(site)));
+            black.WriteLine(System.Text.ASCIIEncoding.Unicode.GetString(EncryptTextToMemory(site)));
             black.Flush();
             
         }
@@ -65,7 +71,7 @@ namespace ProxyServer
         {
             
             White_list.Add(ip);
-            white.WriteLine(System.Text.ASCIIEncoding.ASCII.GetString(EncryptTextToMemory(ip)));
+            white.WriteLine(System.Text.ASCIIEncoding.Unicode.GetString(EncryptTextToMemory(ip)));
             white.Flush();
 
         }
@@ -84,9 +90,9 @@ namespace ProxyServer
 
         public bool inWhiteList(string ip)
         {
-           for (int i=0; i<White_list.Count; ++i)
+           for (int i=0; i < White_list.Count; ++i)
             {
-                if (White_list[i].Equals(ip))
+                if (White_list[i].Contains(ip))
                     return true;
             }
              
@@ -316,12 +322,11 @@ namespace ProxyServer
                 
                 while (line != null)
                 {
-                    
+                   
                     dec = DecryptTextFromMemory(System.Text.ASCIIEncoding.Unicode.GetBytes(line));
                     lst.Add(dec);
                     line = input.ReadLine();
-
-
+                
                 }
             }
             
@@ -344,9 +349,9 @@ namespace ProxyServer
 
             // black = new StreamWriter("black-list.txt", false);
            //  driver.EncryptFile2("b.txt", black);
-             white = new StreamWriter("white-list.txt", false);
-            driver.EncryptFile2("a.txt", white);
-               white.Close();
+            // white = new StreamWriter("white-list.txt", false);
+            //driver.EncryptFile2("a.txt", white);
+             //  white.Close();
           //     black.Close();
               
 
