@@ -37,8 +37,8 @@ namespace ProxyServer
             getUrlAndCreateWebRequest();
 
             //  Get emails from the request body
-            getEmails();
-
+            getEmails(getContext().Request.InputStream);
+          
             //  Set Default Credentials
             getHttpWReq().Credentials = CredentialCache.DefaultCredentials;
 
@@ -92,11 +92,9 @@ namespace ProxyServer
         /// <summary>
         /// 
         /// </summary>
-        protected void getEmails() {
+        protected void getEmails(Stream stream) {
 
-            Stream requestStream = getContext().Request.InputStream;
-            
-            StreamReader streamReader = new StreamReader(requestStream);
+            StreamReader streamReader = new StreamReader(stream);
 
             string body = streamReader.ReadToEnd();
             string headers = getContext().Request.Headers.ToString();
@@ -207,8 +205,9 @@ namespace ProxyServer
             while ((numOfBytes = responseStream.Read(buffer, 0, 32)) != 0) {
 
                 try {
-
+                   
                     getContext().Response.OutputStream.Write(buffer, 0, numOfBytes);
+
                 }
                 catch (Exception e) {
 
