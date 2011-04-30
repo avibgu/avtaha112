@@ -19,38 +19,25 @@ namespace ProxyServer
         public static StreamWriter black;
         public static StreamWriter logger;
         public static StreamWriter mailList;
-        List<string> Black_list = new List<string>();
-        List<string> White_list = new List<string>();
+        List<string> Black_list;
+        List<string> White_list;
         public static TripleDESCryptoServiceProvider tDESalg;
-        string password;
+        string password; // The key for the triple des algorithm.
         public static int X;
         public static int Y;
         string loginPassword;
+        private string state;
         public static List<User> users;
      
-        
+        /// <summary>
+        /// Constructor.
+        /// Used to initialize the fields of the class.
+        /// </summary>
         public Driver()
         {
-            
-            // read from configuration file
-            string passFile = ConfigurationManager.AppSettings["password"];
-            StreamReader file = new StreamReader(passFile);
-            password = file.ReadLine();
-            X = Convert.ToInt32(ConfigurationManager.AppSettings["X"]);
-            Y = Convert.ToInt32(ConfigurationManager.AppSettings["Y"]);
-            loginPassword = ConfigurationManager.AppSettings["loginPassword"];
-            logger = new StreamWriter("..//..//Logger.txt", false);
-            bool fileExists = File.Exists("../..//Logger.txt");
-            if (!fileExists)
-                File.Create("..//..//Logger.txt");
-            logger.WriteLine("Starting...");
-            logger.Flush();
-            // Create the mail file
-            mailList = new StreamWriter("..//..//MailsList.txt", false);
-            fileExists = File.Exists("../..//MailsList.txt");
-            if (!fileExists)
-                File.Create("..//..//MailsList.txt");
-            mailList.Flush();
+            Black_list = new List<string>();
+            White_list = new List<string>();
+                    
             // Create the triple des object.
             tDESalg = new TripleDESCryptoServiceProvider();
             tDESalg.Key = Encoding.ASCII.GetBytes("passwordDR0wSS@P6660juht");
@@ -58,6 +45,48 @@ namespace ProxyServer
 
             // Create the users list
             users = new List<User>();
+
+            // Run the init function to read the configuration parameters.
+            init();
+        }
+
+        /// <summary>
+        /// The init function used to read the parametrs from the configuration file and create the 
+        /// logger and the mail list file.
+        /// <author> Shiran Gabay </author>
+        /// </summary>
+        public void init()
+        {
+            // read the password from configuration file
+            string passFile = ConfigurationManager.AppSettings["password"];
+            StreamReader file = new StreamReader(passFile);
+            password = file.ReadLine();
+            file.Close();
+
+            // read X & Y from configuration file
+            X = Convert.ToInt32(ConfigurationManager.AppSettings["X"]);
+            Y = Convert.ToInt32(ConfigurationManager.AppSettings["Y"]);
+
+            // read the login password from configuration file
+            loginPassword = ConfigurationManager.AppSettings["loginPassword"];
+
+            // Create the logger file.
+            logger = new StreamWriter("Logger.txt", false);
+            bool fileExists = File.Exists("Logger.txt");
+            if (!fileExists)
+                File.Create("Logger.txt");
+            logger.WriteLine("Starting...");
+            logger.Flush();
+
+            // Create the mail file
+            mailList = new StreamWriter("..//..//MailsList.txt", false);
+            fileExists = File.Exists("../..//MailsList.txt");
+            if (!fileExists)
+                File.Create("..//..//MailsList.txt");
+            mailList.Flush();
+
+            // Read the state of the proxy from the configuration file.
+            state = ConfigurationManager.AppSettings["state"];
         }
 
         public TripleDESCryptoServiceProvider getCrypto()
@@ -65,6 +94,16 @@ namespace ProxyServer
             return tDESalg;
         }
 
+        public string getState()
+        {
+            return state;
+        }
+
+        /// <summary>
+        /// Add site which is blocked by the proxy.
+        /// <author> Shiran Gabay </author>
+        /// </summary>
+        /// <param name="site"> The name of the new blocked site.</param>
         public void addBlackIp(string site)
         {
             Black_list.Add(site);
@@ -73,35 +112,52 @@ namespace ProxyServer
             
         }
 
+        /// <summary>
+        /// Add ip address to the white list. From now, users from this ip won't ask for authentication.
+        /// <author> Shiran Gabay </author>
+        /// </summary>
+        /// <param name="site"> The ip to enter.</param>
         public void addWhiteIp(string ip)
         {
             
+            // Add the ip to the white list.
             White_list.Add(ip);
+            // Encrypt the ip and write it to the white list file.
             white.WriteLine(System.Text.ASCIIEncoding.Unicode.GetString(EncryptTextToMemory(ip)));
             white.Flush();
             // Add new User object to the users list.
             users.Add(new User(ip, X, Y));
         }
 
+        /// <summary>
+        /// Get the user object of the user identified by ip.
+        /// </summary>
+        /// <author> Shiran Gabay </author>
+        /// <param name="ip"> the ip of the returned object.</param>
+        /// <returns>the user object with the given ip.</returns>
         public User getUser(string ip)
         {
            for (int i = 0; i < users.Count ; ++i)
             {
-               if(ip.Contains(users[i].getIp()))
-                //if (users[i].getIp().Contains(ip))
-                {
+               if(ip.Equals(users[i].getIp()))
+               {
                     return users[i];
                 }
             }
                 return null;
         }
 
+        /// <summary>
+        /// Remove ip from the white lisr according to exceeding the maximum request rate.
+        /// </summary>
+        /// <author> Shiran Gabay </author>
+        /// <param name="ip"> The ip to remove. </param>
         public void removeWhiteIp(string ip)
         {
             // Find the user and remove it from the users list.
             for (int i = 0; i < users.Count; ++i)
             {
-                if (users[i].getIp().Contains(ip))
+                if (users[i].getIp().Equals(ip))
                 {
                     users.RemoveAt(i);
                     break;
@@ -115,7 +171,7 @@ namespace ProxyServer
         {
             for (int i=0; i<Black_list.Count; ++i)
             {
-                 if (Black_list[i].Contains(site) )
+                if (Black_list[i].Contains(site) )
                     return true;
             }
              
@@ -134,7 +190,11 @@ namespace ProxyServer
             return false;
         }
 
-
+        /// <summary>
+        /// Send authenticate page to the user.
+        /// </summary>
+        /// <author> Shiran Gabay </author>
+        /// <param name="context">The context of the request.</param>
         public void login(HttpListenerContext context)
         {
                string response = System.IO.File.ReadAllText("..\\..\\LoginPage.htm");
@@ -142,9 +202,14 @@ namespace ProxyServer
                context.Response.ContentLength64 = b.Length;
                context.Response.OutputStream.Write(b, 0, b.Length);
                context.Response.OutputStream.Close();
-       
-          
         }
+
+
+        /// <summary>
+        /// Encrypt the given text with triple des algorithm.
+        /// </summary>
+        /// <param name="Data">The string to encrypt.</param>
+        /// <returns>The encrypted data</returns>
         public static byte[] EncryptTextToMemory(string Data)
         {
             try
@@ -182,9 +247,13 @@ namespace ProxyServer
                 Console.WriteLine("A Cryptographic error occurred: {0}", e.Message);
                 return null;
             }
-
         }
 
+        /// <summary>
+        /// Decrypt the given data with triple des algorithm.
+        /// </summary>
+        /// <param name="Data">The byte array to decrypt.</param>
+        /// <returns>The decrypted data</returns>
         public static string DecryptTextFromMemory(byte[] Data)
         {
             try
@@ -217,22 +286,11 @@ namespace ProxyServer
         }
 
 
-        public static bool ByteArraysEqual(byte[] b1, byte[] b2)
-        {
-            if (b1 == b2) return true;
-            if (b1 == null || b2 == null) return false;
-            if (b1.Length != b2.Length) return false;
-            for (int i = 0; i < b1.Length; i++)
-            {
-                if (b1[i] != b2[i]) return false;
-            }
-            return true;
-        }
-
         /// <summary> 
         /// Parse the given file to the given list.
         /// Insert each line in the file to another location in the list.
         /// </summary>
+        ///  <author> Shiran Gabay </author>
         /// <param name="fileString"> The string to parse.</param>
         /// <param name="lst">The list to insert into.</param>
         public void parseFile(string fileString,List<string> lst)
@@ -257,72 +315,12 @@ namespace ProxyServer
         }
 
         /// <summary>
-        /// Encrypts a file and saves the output to a new file.
+        /// Encrypt the data in the given file and write the encrypted data to the output file.
         /// </summary>
-        /// <param name="inputFile">The file to encrypt.</param>
-        /// <param name="outputFile">File to save encrypted version.</param>
-        private void EncryptFile(string inputFile, string outputFile)
-        {
-            
-            // Get filestream for input file.
-            using (var inputStream =
-               new FileStream(inputFile, FileMode.Open, FileAccess.Read))
-            {
-                // Get filestream for output file.
-                using (var outputStream =
-                   new FileStream(outputFile, FileMode.Create, FileAccess.Write))
-                {
-                    // Create an encryption stream.
-                    using (var cryptoStream =
-                       new CryptoStream(outputStream,
-                          getCrypto().CreateEncryptor(), CryptoStreamMode.Write))
-                    {
-                        // Copy the input file stream to the encryption stream.
-                        inputStream.CopyTo(cryptoStream);
-                    }
-                    outputStream.Close();
-                }
-                inputStream.Close();
-            }
-        }
-
-        /// <summary>
-        /// Decrypts the specified file and returns the contents.
-        /// </summary>
-        /// <param name="inputFile">The file to decrypt.</param>
-        /// <returns>Contents of the file.</returns>
-        private string DecryptFile(string inputFile)
-        {
-            string ans = "";
-            // Get FileInfo. Check if the file is empty or not/
-            FileInfo fi = new FileInfo(ConfigurationManager.AppSettings["white-list"]);
-            if (fi.Length == 0)
-                return "";
-
-            // Get filestream for input file.
-            using (var inputStream =
-               new FileStream(inputFile, FileMode.Open, FileAccess.Read))
-            {
-                // Create an encryption stream.
-                using (var cryptoStream =
-                   new CryptoStream(inputStream,
-                      getCrypto().CreateDecryptor(), CryptoStreamMode.Read))
-                {
-                    using (var reader = new StreamReader(cryptoStream))
-                    {
-                        
-                        ans= reader.ReadToEnd(); 
-                              
-                    }
-
-                }
-                inputStream.Close();
-                return ans;
-            }
-
-        }
-
-        public void EncryptFile2(string inputFile, StreamWriter outputFile)
+        /// <author> Shiran Gabay </author>
+        /// <param name="inputFile">The file to encrypt</param>
+        /// <param name="outputFile">The file to write the encrypted text into.</param>
+        public void EncryptFile(string inputFile, StreamWriter outputFile)
         {
 
             using (outputFile)
@@ -333,20 +331,50 @@ namespace ProxyServer
 
                 while (line != null)
                 {
-                     //  outputFile.WriteLine("hello");
                     outputFile.WriteLine(System.Text.ASCIIEncoding.Unicode.GetString(EncryptTextToMemory(line)));
                     outputFile.Flush();
                     line = input.ReadLine();
+                }
+            }
+        }
 
+        /// <summary>
+        /// Decrypt the text in the input file and insert each decrypted line to the given list.
+        /// </summary>
+        /// <author> Shiran Gabay </author>
+        /// <param name="inputFile">The file to decrypt.</param>
+        /// <param name="lst">The list to insert the decrypted lines into.</param>
+        public void DecryptSiteToList(string inputFile, List<string> lst)
+        {
+            using (StreamReader input = new StreamReader(inputFile))
+            {
+                string line;
+                string dec;
+
+                line = input.ReadLine();
+
+                while (line != null)
+                {
+                    // Decrypt the line.
+                    dec = DecryptTextFromMemory(System.Text.ASCIIEncoding.Unicode.GetBytes(line));
+                    // Add the decrypted line to the list.
+                    lst.Add(dec);
+                    // Add the site to the users list.
+                    users.Add(new User(dec, X, Y));
+                    line = input.ReadLine();
 
                 }
-               
             }
-            
 
         }
 
-        public void DecryptFileToList(string inputFile, List<string> lst)
+        /// <summary>
+        /// Decrypt the text in the input file and insert each decrypted line to the given list.
+        /// </summary>
+        /// <author> Shiran Gabay </author>
+        /// <param name="inputFile">The file to decrypt.</param>
+        /// <param name="lst">The list to insert the decrypted lines into.</param>
+        public void DecryptIpToList(string inputFile, List<string> lst)
         {
             using (StreamReader input = new StreamReader(inputFile))
             {
@@ -357,16 +385,19 @@ namespace ProxyServer
                 
                 while (line != null)
                 {
-                   
+                     // Decrypt the line.
                     dec = DecryptTextFromMemory(System.Text.ASCIIEncoding.Unicode.GetBytes(line));
+                    // Remove unneccesary chars. 
                     System.Text.RegularExpressions.Regex nonNumericCharacters = new System.Text.RegularExpressions.Regex(@"\D");
                     string numericOnlyString = nonNumericCharacters.Replace(dec, String.Empty);
-
                     Regex ip = new Regex(@"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b");
                     MatchCollection result = ip.Matches(dec);
+
                     if (result.Count > 0)
                     {
+                        // Add the decrypted line to the list.
                         lst.Add(result[0].ToString());
+                        // Add the ip to the users list.
                         users.Add(new User(result[0].ToString(), X, Y));
                     }
                     line = input.ReadLine();
@@ -376,6 +407,12 @@ namespace ProxyServer
             
         }
 
+        /// <summary>
+        /// Send response to the context's user with the given string.
+        /// </summary>
+        /// <author> Shiran Gabay </author>
+        /// <param name="strToResponse">The response/</param>
+        /// <param name="context">The request context.</param>
         public static void sendResponse(string strToResponse,HttpListenerContext context){
                    string response = "<HTML><BODY>"+strToResponse+"</BODY></HTML>";
                    byte[] b = Encoding.ASCII.GetBytes(response);
@@ -384,67 +421,66 @@ namespace ProxyServer
                    context.Response.OutputStream.Close();
         }
 
-        public bool checkNumOfPackets(HttpListenerContext context)
-        {
-            return true;
-        }
 
         static void Main(string[] args)
         {
+            // Create driver instance.
             Driver driver = new Driver();
 
             // Create the encrypted files.
 
              black = new StreamWriter("black-list.txt", false);
-             driver.EncryptFile2("b.txt", black);
+             driver.EncryptFile("b.txt", black);
              white = new StreamWriter("white-list.txt", false);
-             driver.EncryptFile2("a.txt", white);
+             driver.EncryptFile("a.txt", white);
              white.Close();
              black.Close();
               
-
-            driver.DecryptFileToList("black-list.txt", driver.Black_list);
-            driver.DecryptFileToList("white-list.txt", driver.White_list);
-         
+            // Decrypt the files to the lists.
+            driver.DecryptSiteToList("black-list.txt", driver.Black_list);
+            driver.DecryptIpToList("white-list.txt", driver.White_list);
+          
+            // Create the stream writers of the white users and black sites.
             white = new StreamWriter("white-list.txt", true);
-        
             black = new StreamWriter("black-list.txt", true);
 
               
-            Console.WriteLine("Choose server state:\n" +
-                                "1. open.\n" +
-                                "2. anonymous.");
-
-            string inputLine = Console.ReadLine();
-
             ProxyFactory proxyFactory = null;
 
-            if (inputLine.CompareTo("1") == 0)
+            // Check the state of the proxy - open or anonymous.
+            if (driver.getState().Equals("open"))
                 proxyFactory = new OpenProxyFactory();
 
             else
                 proxyFactory = new AnonProxyFactory();
 
+            // Create the listener object.
             HttpListener listener = new HttpListener();
 
+            // args[0]= The proxy port.
             listener.Prefixes.Add("http://*:" + args[0] + "/");
          
+            // start the listener...
             listener.Start();
 
             Console.WriteLine("Proxy starts..");
                       
             while (true)
             {
+                // Waiting to get context.
                 HttpListenerContext context = listener.GetContext();
                 Proxy proxy = proxyFactory.getProxy(context);
-                Uri url = context.Request.Url;
+
                 string ipWithPort = context.Request.UserHostAddress;
                 // Get the request ip without the port. to the logger.
                 string ip = ipWithPort.Substring(0, ipWithPort.IndexOf(':'));
                 // Get the request URL.
                 string uri = context.Request.RawUrl;
                 string findPassword="";
-               // Check if we got login request
+
+               // Check if we got login request. If it is, check the password. If the password equals to the login password
+               // the ip will be added to the white list.
+
                int num1 = uri.IndexOf("loginPassword=");
                 if (num1 > 0)
                 {
@@ -461,35 +497,37 @@ namespace ProxyServer
                 }
                 
                              
-                // Write thw request
+                // Write the request to the logger.
                 logger.WriteLine(ip + " is asking for site " + uri);
                 logger.Flush();
                
+                // Check if the uri is in the black list
                 if (driver.inBlackList(uri))
                 {
-                    sendResponse("Unauthorized user", context);
+                    sendResponse("Unauthorized site", context);
                     continue;
                 }
 
+                // Check if the user is authenticated.
                 if (!driver.inWhiteList(ip))
                 {
-                    driver.login(context);
+                    driver.login(context); // send the user authentication page.
                 }
-                else
+                else // The user in the white list.
                 {
                     User tempUser = driver.getUser(ip);
                     if (tempUser != null)
                     {
                         tempUser.addrequest();
-                        if (tempUser.ExceedRequestsIntime())
+                        if (tempUser.ExceedRequestsIntime()) // check if the user has send more than X requests in Y seconds.
                         {
-                            driver.removeWhiteIp(ip);
+                            driver.removeWhiteIp(ip); // remove the user from the white list. 
                             sendResponse("You exceeded the max packets. Connect again!", context);
                         }
-                        else
+                        else // run the thread who response to the user.
                             new Thread(new ThreadStart(proxy.run)).Start();
                     }
-                    else
+                    else // Exceed the maximum number of requests.
                         sendResponse("You exceeded the max packets. Connect again!", context);
                 }
             }
