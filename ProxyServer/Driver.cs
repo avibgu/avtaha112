@@ -9,6 +9,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Diagnostics;
 using System.Configuration;
+using System.Text.RegularExpressions;
 
 namespace ProxyServer
 {
@@ -22,9 +23,11 @@ namespace ProxyServer
         List<string> White_list = new List<string>();
         public static TripleDESCryptoServiceProvider tDESalg;
         string password;
-        int X;
-        int Y;
+        public static int X;
+        public static int Y;
         string loginPassword;
+        public static List<User> users;
+     
         
         public Driver()
         {
@@ -52,6 +55,9 @@ namespace ProxyServer
             tDESalg = new TripleDESCryptoServiceProvider();
             tDESalg.Key = Encoding.ASCII.GetBytes("passwordDR0wSS@P6660juht");
             tDESalg.IV = new Byte[] { 75, 220, 255, 151, 65, 212, 209, 162 };
+
+            // Create the users list
+            users = new List<User>();
         }
 
         public TripleDESCryptoServiceProvider getCrypto()
@@ -73,7 +79,36 @@ namespace ProxyServer
             White_list.Add(ip);
             white.WriteLine(System.Text.ASCIIEncoding.Unicode.GetString(EncryptTextToMemory(ip)));
             white.Flush();
+            // Add new User object to the users list.
+            users.Add(new User(ip, X, Y));
+        }
 
+        public User getUser(string ip)
+        {
+           for (int i = 0; i < users.Count ; ++i)
+            {
+               if(ip.Contains(users[i].getIp()))
+                //if (users[i].getIp().Contains(ip))
+                {
+                    return users[i];
+                }
+            }
+                return null;
+        }
+
+        public void removeWhiteIp(string ip)
+        {
+            // Find the user and remove it from the users list.
+            for (int i = 0; i < users.Count; ++i)
+            {
+                if (users[i].getIp().Contains(ip))
+                {
+                    users.RemoveAt(i);
+                    break;
+                }
+            }
+            // Remove the ip from the white list.
+            White_list.Remove(ip);
         }
 
         public bool inBlackList(string site)
@@ -324,7 +359,16 @@ namespace ProxyServer
                 {
                    
                     dec = DecryptTextFromMemory(System.Text.ASCIIEncoding.Unicode.GetBytes(line));
-                    lst.Add(dec);
+                    System.Text.RegularExpressions.Regex nonNumericCharacters = new System.Text.RegularExpressions.Regex(@"\D");
+                    string numericOnlyString = nonNumericCharacters.Replace(dec, String.Empty);
+
+                    Regex ip = new Regex(@"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b");
+                    MatchCollection result = ip.Matches(dec);
+                    if (result.Count > 0)
+                    {
+                        lst.Add(result[0].ToString());
+                        users.Add(new User(result[0].ToString(), X, Y));
+                    }
                     line = input.ReadLine();
                 
                 }
@@ -340,6 +384,10 @@ namespace ProxyServer
                    context.Response.OutputStream.Close();
         }
 
+        public bool checkNumOfPackets(HttpListenerContext context)
+        {
+            return true;
+        }
 
         static void Main(string[] args)
         {
@@ -384,7 +432,7 @@ namespace ProxyServer
             listener.Start();
 
             Console.WriteLine("Proxy starts..");
-
+                      
             while (true)
             {
                 HttpListenerContext context = listener.GetContext();
@@ -396,9 +444,8 @@ namespace ProxyServer
                 // Get the request URL.
                 string uri = context.Request.RawUrl;
                 string findPassword="";
-             
-                // Check if we got login request
-                int num1 = uri.IndexOf("loginPassword=");
+               // Check if we got login request
+               int num1 = uri.IndexOf("loginPassword=");
                 if (num1 > 0)
                 {
                     findPassword = uri;
@@ -412,8 +459,8 @@ namespace ProxyServer
                         sendResponse("Unsuccessfull login :(",context);
                     continue;
                 }
-             
-               
+                
+                             
                 // Write thw request
                 logger.WriteLine(ip + " is asking for site " + uri);
                 logger.Flush();
@@ -424,13 +471,27 @@ namespace ProxyServer
                     continue;
                 }
 
-              
                 if (!driver.inWhiteList(ip))
-               {
-                   driver.login(context);
-               }
+                {
+                    driver.login(context);
+                }
                 else
-                   new Thread(new ThreadStart(proxy.run)).Start();
+                {
+                    User tempUser = driver.getUser(ip);
+                    if (tempUser != null)
+                    {
+                        tempUser.addrequest();
+                        if (tempUser.ExceedRequestsIntime())
+                        {
+                            driver.removeWhiteIp(ip);
+                            sendResponse("You exceeded the max packets. Connect again!", context);
+                        }
+                        else
+                            new Thread(new ThreadStart(proxy.run)).Start();
+                    }
+                    else
+                        sendResponse("You exceeded the max packets. Connect again!", context);
+                }
             }
         }
     }
