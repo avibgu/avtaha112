@@ -25,7 +25,7 @@ namespace ProxyServer
         string password; // The key for the triple des algorithm.
         public static int X;
         public static int Y;
-        string loginPassword;
+        private string loginPassword;
         private string state;
         public static List<User> users;
      
