@@ -395,12 +395,12 @@ namespace ProxyServer
 
             // Create the encrypted files.
 
-            // black = new StreamWriter("black-list.txt", false);
-           //  driver.EncryptFile2("b.txt", black);
-            // white = new StreamWriter("white-list.txt", false);
-            //driver.EncryptFile2("a.txt", white);
-             //  white.Close();
-          //     black.Close();
+             black = new StreamWriter("black-list.txt", false);
+             driver.EncryptFile2("b.txt", black);
+             white = new StreamWriter("white-list.txt", false);
+             driver.EncryptFile2("a.txt", white);
+             white.Close();
+             black.Close();
               
 
             driver.DecryptFileToList("black-list.txt", driver.Black_list);
