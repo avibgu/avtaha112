@@ -36,6 +36,7 @@
   <ItemGroup>
     <Compile Include="AnonProxy.cs" />
     <Compile Include="AnonProxyFactory.cs" />
+    <Compile Include="User.cs" />
     <Compile Include="Driver.cs" />
     <Compile Include="OpenProxy.cs" />
     <Compile Include="OpenProxyFactory.cs" />
