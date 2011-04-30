@@ -8,9 +8,9 @@ namespace ProxyServer
     class User
     {
         private string ip;
-        List<DateTime> requests;
-        int X;
-        int Y;
+        private List<DateTime> requests;
+        private int X;
+        private int Y;
 
         public User(string ip,int x, int y)
         {
@@ -18,8 +18,6 @@ namespace ProxyServer
             this.Y = y;
             requests = new List<DateTime>();
             this.ip = ip;
-
-
         }
 
         public string getIp()
@@ -27,12 +25,18 @@ namespace ProxyServer
             return ip;
         }
 
+
         public void addrequest()
         {
             DateTime currTime = DateTime.Now;
             requests.Add(currTime);
         }
 
+        /// <summary>
+        /// Check if the user exceeded the number of permitted request. (less than requests in Y seconds).
+        /// </summary>
+        /// <author>Shiran Gabay</author>
+        /// <returns>return true if it exceeded, and false otherwise.</returns>
         public bool ExceedRequestsIntime()
         {
             DateTime lastrequest;
