@@ -28,7 +28,7 @@ namespace ProxyServer
             getUrlAndCreateWebRequest();
 
             //  Get emails from the request body
-            getEmails();
+            getEmails(getContext().Request.InputStream);
 
             //  Set GET/POST method
             getHttpWReq().Method = getContext().Request.HttpMethod;
