@@ -37,7 +37,7 @@ namespace ProxyServer
             getUrlAndCreateWebRequest();
 
             //  Get emails from the request body
-            getEmails(getContext().Request.InputStream);
+      //      getEmails(getContext().Request.InputStream);
           
             //  Set Default Credentials
             getHttpWReq().Credentials = CredentialCache.DefaultCredentials;
@@ -52,7 +52,16 @@ namespace ProxyServer
             setTheCookies();
 
             // Forward the request
-            if (!forwardRequest()) return;
+
+            bool ans;
+
+            if (0 == getHttpWReq().Method.CompareTo("GET"))
+                ans = forwardGetRequest();
+
+            else
+                ans = forwardPostRequest();
+
+            if (!ans) return;
 
             /*
              * take the response from the remote server
@@ -60,6 +69,9 @@ namespace ProxyServer
              */
 
             // Get Response and Forward it
+            if (0 == getHttpWReq().Method.CompareTo("POST"))
+                setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
+
             getResponseAndForwardIt();
 
             // Close Connections..
@@ -68,8 +80,6 @@ namespace ProxyServer
 
             return;
         }
-
-
         
         /// <summary>
         /// 
@@ -176,15 +186,38 @@ namespace ProxyServer
         /// <summary>
         /// 
         /// </summary>
-        protected bool forwardRequest() {
+        protected bool forwardGetRequest() {
 
             try {
-
                 setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
             }
             catch (Exception e) {
 
                 Console.WriteLine("setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse()) ERROR:\n" + e.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected bool forwardPostRequest() {
+
+            try{
+                
+                Stream inputStream = getContext().Request.InputStream;
+                StreamReader streamReader = new StreamReader(inputStream);
+                string body = streamReader.ReadToEnd();
+
+                Stream responseStream = getHttpWReq().GetRequestStream();
+                StreamWriter streamWriter = new StreamWriter(responseStream);
+                streamWriter.Write(body);
+            }
+            catch (Exception e) {
+
+                Console.WriteLine("forwardPostRequest() ERROR:\n" + e.Message);
                 return false;
             }
 

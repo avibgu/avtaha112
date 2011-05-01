@@ -36,9 +36,8 @@ namespace ProxyServer
             //  Sets the headers
             setTheHeaders();
 
-        
             // Forward the request
-            if (!forwardRequest()) return;
+            if (!forwardGetRequest()) return;
 
             /*
              * take the response from the remote server
