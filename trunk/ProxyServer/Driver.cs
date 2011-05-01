@@ -15,6 +15,7 @@ namespace ProxyServer
 {
     class Driver
     {
+        public static string port;
         public static StreamWriter white;
         public static StreamWriter black;
         public static StreamWriter logger;
@@ -429,12 +430,12 @@ namespace ProxyServer
 
             // Create the encrypted files.
 
-             black = new StreamWriter("black-list.txt", false);
+            /* black = new StreamWriter("black-list.txt", false);
              driver.EncryptFile("b.txt", black);
              white = new StreamWriter("white-list.txt", false);
              driver.EncryptFile("a.txt", white);
              white.Close();
-             black.Close();
+             black.Close();*/
               
             // Decrypt the files to the lists.
             driver.DecryptSiteToList("black-list.txt", driver.Black_list);
@@ -458,7 +459,8 @@ namespace ProxyServer
             HttpListener listener = new HttpListener();
 
             // args[0]= The proxy port.
-            listener.Prefixes.Add("http://*:" + args[0] + "/");
+            Driver.port = args[0];
+            listener.Prefixes.Add("http://*:" + Driver.port + "/");
          
             // start the listener...
             listener.Start();
