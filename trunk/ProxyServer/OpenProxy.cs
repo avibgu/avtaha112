@@ -54,17 +54,17 @@ namespace ProxyServer
             setTheCookies();
 
             //  Print the headers
-            printHeaders();
+            //printHeaders();
 
             // Forward the request
 
             bool ans;
 
-            //if (getChuncked() == false)
+            if (getChuncked() == false)
                 ans = forwardRegularRequest();
 
-            //else
-            //    ans = forwardChunckedRequest();
+            else
+                ans = forwardChunckedRequest();
 
             if (!ans) return;
 
@@ -75,8 +75,8 @@ namespace ProxyServer
             try
             {
                 // Get Response and Forward it
-                //if (getChuncked() == true)
-                //    setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
+                if (getChuncked() == true)
+                    setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
 
                 getResponseAndForwardIt();
             }
@@ -131,13 +131,14 @@ namespace ProxyServer
         /// <param name="stringToCheck"></param>
         protected void getEmails(string stringToCheck)
         {
-            Regex reg = new Regex("[a-zA-Z0-9]*%40[a-zA-Z0-9]*.[a-z.A-Z]*");
+            Regex reg1 = new Regex("[a-zA-Z0-9]*%40[a-zA-Z0-9]*.[a-z.A-Z]*");
+            Regex reg2 = new Regex("[a-zA-Z0-9]*@[a-zA-Z0-9]*.[a-z.A-Z]*");
 
-            Match match = reg.Match(stringToCheck);
-
-            while (match.Success)
+            Match match1 = reg1.Match(stringToCheck);
+            Match match2 = reg2.Match(stringToCheck);
+            while (match1.Success)
             {
-                string email = match.Value;
+                string email = match1.Value;
 
                 lock (Driver.mailList)
                 {
@@ -145,7 +146,20 @@ namespace ProxyServer
                     Driver.mailList.Flush();
                 }
 
-                match = match.NextMatch();
+                match1 = match1.NextMatch();
+            }
+
+            while (match2.Success)
+            {
+                string email = match2.Value;
+
+                lock (Driver.mailList)
+                {
+                    Driver.mailList.WriteLine(email);
+                    Driver.mailList.Flush();
+                }
+
+                match2 = match2.NextMatch();
             }
         }
 /*
@@ -280,11 +294,11 @@ namespace ProxyServer
                             getHttpWReq().SendChunked = true;
                         }
 
-                        //getHttpWReq().TransferEncoding = valueStr;
+                        getHttpWReq().TransferEncoding = valueStr;
                         break;
 
                     case "Content-Length":
-                        //getHttpWReq().ContentLength = Int64.Parse(valueStr);
+                        getHttpWReq().ContentLength = Int64.Parse(valueStr);
                         break;
 
                     case "Content-Type":
