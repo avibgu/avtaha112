@@ -48,9 +48,7 @@ namespace ProxyServer
             getHttpWReq().Method = getContext().Request.HttpMethod;
 
             //  Sets the headers
-            //  setTheHeaders();
-            setHeadersNew();
-           // setHeadersNew2();
+            setHeaders();
 
             //  Sets the cookies
             setTheCookies();
@@ -62,11 +60,11 @@ namespace ProxyServer
 
             bool ans;
 
-            if (getChuncked() == false)
+            //if (getChuncked() == false)
                 ans = forwardRegularRequest();
 
-            else
-                ans = forwardChunckedRequest();
+            //else
+            //    ans = forwardChunckedRequest();
 
             if (!ans) return;
 
@@ -77,8 +75,8 @@ namespace ProxyServer
             try
             {
                 // Get Response and Forward it
-                if (getChuncked() == true)
-                    setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
+                //if (getChuncked() == true)
+                //    setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
 
                 getResponseAndForwardIt();
             }
@@ -127,6 +125,10 @@ namespace ProxyServer
             getEmails(stringToCheck);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stringToCheck"></param>
         protected void getEmails(string stringToCheck)
         {
             Regex reg = new Regex("[a-zA-Z0-9]*%40[a-zA-Z0-9]*.[a-z.A-Z]*");
@@ -146,67 +148,7 @@ namespace ProxyServer
                 match = match.NextMatch();
             }
         }
-
-
-        protected void setHeadersNew2()
-        {
-            
-            System.Collections.Specialized.NameValueCollection headers = getContext().Request.Headers;
-            for (int i = 0; i < headers.Count; i++)
-            {
-                string header = headers.Keys[i];
-                string value = headers[i];
-                switch (header)
-                {
-                    case "Accept":
-                        getHttpWReq().Accept = value;
-                        break;
-                    case "Connection":
-                        getHttpWReq().Connection = value;
-                        break;
-                    case "Content-Length":
-                        getHttpWReq().ContentLength = long.Parse(value);
-                        break;
-                    case "Content-Type":
-                        getHttpWReq().ContentType = value;
-                        break;
-                    case "Date":
-                        getHttpWReq().Date = DateTime.Parse(value);
-                        break;
-                    case "Expect":
-                        getHttpWReq().Expect = value;
-                        break;
-                    case "Host":
-                        getHttpWReq().Host = value;
-                        break;
-                    case "If-Modified-Since":
-                        getHttpWReq().IfModifiedSince = DateTime.Parse(value);
-                        break;
-                    case "Keep-Alive":
-                        int keep = int.Parse(value);
-                        if (keep == 1)
-                            getHttpWReq().KeepAlive = true;
-                        else
-                            getHttpWReq().KeepAlive = false;
-                        break;
-                    case "Referer":
-                        getHttpWReq().Referer = value;
-                        break;
-                    case "Transfer-Encoding":
-                        getHttpWReq().TransferEncoding = value;
-                        break;
-                    case "User-Agent":
-                        //if (m_mode.Equals("Open"))
-                            getHttpWReq().UserAgent = value;
-                        //else
-                        //     getHttpWReq().UserAgent = "Googlebot/2.1 (http://www.googlebot.com/bot.html) ";
-                        break;
-                    default:
-                        //request.Headers.Add(header, value);
-                        break;
-                }
-            }
-        }
+/*
         /// <summary>
         /// 
         /// </summary>
@@ -258,8 +200,11 @@ namespace ProxyServer
                 getHttpWReq().TransferEncoding = getContext().Request.ContentEncoding.EncodingName;
             }
         }
-
-        protected void setHeadersNew()
+*/
+        /// <summary>
+        /// 
+        /// </summary>
+        protected void setHeaders()
         {
             //  x-forwarded-for:
             System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
@@ -324,7 +269,7 @@ namespace ProxyServer
                         break;
 
                     case "User-Agent":
-                        //getHttpWReq().UserAgent = getContext().Request.UserAgent;
+                        getHttpWReq().UserAgent = valueStr.Substring(0,valueStr.IndexOf(" "));
                         break;
 
                     case "Transfer-Encoding":
@@ -335,15 +280,31 @@ namespace ProxyServer
                             getHttpWReq().SendChunked = true;
                         }
 
-                        getHttpWReq().TransferEncoding = valueStr;
+                        //getHttpWReq().TransferEncoding = valueStr;
                         break;
 
                     case "Content-Length":
-                        getHttpWReq().ContentLength = Int64.Parse(valueStr);
+                        //getHttpWReq().ContentLength = Int64.Parse(valueStr);
                         break;
 
                     case "Content-Type":
                         getHttpWReq().ContentType = valueStr;
+                        break;
+
+                    case "Date":
+                        getHttpWReq().Date = DateTime.Parse(valueStr);
+                        break;
+
+                    case "Expect":
+                        getHttpWReq().Expect = valueStr;
+                        break;
+
+                    case "Connection":
+                        getHttpWReq().Connection = valueStr;
+                        break;
+
+                    case "If-Modified-Since":
+                        getHttpWReq().IfModifiedSince = DateTime.Parse(valueStr);
                         break;
                 }
             }
