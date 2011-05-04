@@ -24,6 +24,7 @@ namespace ProxyServer
             setUrl(null);
             setHttpWReq(null);
             setHttpWResp(null);
+            setChuncked(false);
         }
 
         public virtual void run()
@@ -199,6 +200,21 @@ namespace ProxyServer
 
         protected void setHeadersNew()
         {
+            //  x-forwarded-for:
+            System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+
+            string xForwardedFor = "";
+
+            foreach (IPAddress ip in ips.AddressList)
+                xForwardedFor = ip.ToString() + "," + xForwardedFor;
+
+            xForwardedFor = ips.AddressList.GetValue(ips.AddressList.Length - 1).ToString() + ", " + xForwardedFor;
+
+            getHttpWReq().Headers.Add("x-forwarded-for", xForwardedFor);
+
+            //  proxy-version:
+            getHttpWReq().Headers.Add("proxy-version", "0.17");
+
             NameValueCollection headers = getContext().Request.Headers;
 
             foreach(string header in headers.Keys){
@@ -215,7 +231,7 @@ namespace ProxyServer
                 switch(header){
 
                     case "Proxy-Connection":
-                        //getHttpWReq(). = valueStr;
+                       // getHttpWReq().Headers.Add("Proxy-Connection", valueStr);
                         break;
 
                     case "Keep-Alive":
@@ -227,19 +243,15 @@ namespace ProxyServer
                         break;
 
                     case "Accept-Charset":
-                        //getHttpWReq().Char = valueStr;
+                        getHttpWReq().Headers.Add("Accept-Charset", valueStr);
                         break;
 
                     case "Accept-Encoding":
-                        //getHttpWReq().TransferEncoding = valueStr;
-                        break;
-
-                    case "Transfer-Encoding":
-                        getHttpWReq().TransferEncoding = valueStr;
+                        getHttpWReq().Headers.Add("Accept-Encoding", valueStr);
                         break;
 
                     case "Accept-Language":
-                        //getHttpWReq(). = valueStr;
+                        getHttpWReq().Headers.Add("Accept-Language", valueStr);
                         break;
 
                     case "Host":
@@ -252,6 +264,25 @@ namespace ProxyServer
 
                     case "User-Agent":
                         getHttpWReq().UserAgent = valueStr;
+                        break;
+
+                    case "Transfer-Encoding":
+
+                        if (0 == valueStr.CompareTo("chunked")) {
+
+                            setChuncked(true);
+                            getHttpWReq().SendChunked = true;
+                        }
+
+                        getHttpWReq().TransferEncoding = valueStr;
+                        break;
+
+                    case "Content-Length":
+                        getHttpWReq().ContentLength = Int64.Parse(valueStr);
+                        break;
+
+                    case "Content-Type":
+                        getHttpWReq().ContentType = valueStr;
                         break;
                 }
             }
