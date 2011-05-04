@@ -17,16 +17,30 @@ namespace ProxyServer
         private Uri _url;
         private HttpWebRequest _httpWReq;
         private HttpWebResponse _httpWResp;
-        private bool _chuncked;
+        private string _xForwardedFor;
+        private string _proxyVersion;
 
+        /// <summary>
+        /// This is the constructor of the Open Proxy.
+        /// </summary>
+        /// <param name="context"> Gets the context of the connection as argument</param>
+        /// <author>Avi Digmi</author>
         public OpenProxy(HttpListenerContext context) {
             setContext(context);
             setUrl(null);
             setHttpWReq(null);
             setHttpWResp(null);
-            setChuncked(false);
+            setXForwardedFor("");
+            setProxyVersion("0.17");
         }
 
+        /// <summary>
+        /// This is the main method of the Open Proxy.
+        /// Responsable on taking the original request from the web browser
+        /// and sending it, after some modifications, to the web server.
+        /// It also handles the sent of the response from the web server to the web client.
+        /// </summary>
+        /// <author>Avi Digmi</author>
         public virtual void run()
         {
             /*
@@ -48,21 +62,20 @@ namespace ProxyServer
             getHttpWReq().Method = getContext().Request.HttpMethod;
 
             //  Sets the headers
-            setHeaders();
+            setOriginalRequestHeaders();
+            setAdditionalHeaders();
 
             //  Sets the cookies
             setTheCookies();
 
             //  Print the headers
-            //printHeaders();
+            printWebRequestHeaders();
 
             // Forward the request
-
             bool ans;
 
-            if (getChuncked() == false)
+            if (getHttpWReq().SendChunked == false)
                 ans = forwardRegularRequest();
-
             else
                 ans = forwardChunckedRequest();
 
@@ -75,7 +88,7 @@ namespace ProxyServer
             try
             {
                 // Get Response and Forward it
-                if (getChuncked() == true)
+                if (getHttpWReq().SendChunked == true)
                     setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
 
                 getResponseAndForwardIt();
@@ -90,8 +103,10 @@ namespace ProxyServer
         }
         
         /// <summary>
-        /// 
+        /// This function gets the url from the context's request,
+        /// and building a new web request from that url (to send it later to the web server).
         /// </summary>
+        /// <author>Avi Digmi</author>
         protected void getUrlAndCreateWebRequest() {
 
             _url = getContext().Request.Url;
@@ -108,8 +123,9 @@ namespace ProxyServer
         }
 
         /// <summary>
-        /// 
+        /// This function filters out the emails from the web request.
         /// </summary>
+        /// <author>Avi Digmi</author>
         protected void getRequestEmails() {
 
             Stream stream = getContext().Request.InputStream;
@@ -126,9 +142,10 @@ namespace ProxyServer
         }
 
         /// <summary>
-        /// 
+        /// This function filters out the emails from the given string.
         /// </summary>
-        /// <param name="stringToCheck"></param>
+        /// <param name="stringToCheck">The string that we want to filter out the emails from.</param>
+        /// <author>Avi Digmi</author>
         protected void getEmails(string stringToCheck)
         {
             Regex reg1 = new Regex("[a-zA-Z0-9]*%40[a-zA-Z0-9]*.[a-z.A-Z]*");
@@ -162,24 +179,13 @@ namespace ProxyServer
                 match2 = match2.NextMatch();
             }
         }
-/*
+
         /// <summary>
-        /// 
+        /// This function adds the requested additional headers to the web request:
+        /// x-forwarded-for, and proxy-version.
         /// </summary>
-        protected void setTheHeaders() {
-
-            //  User-Agent:
-            getHttpWReq().UserAgent = getContext().Request.UserAgent;
-
-            //  Accept:
-            string[] acceptTypes = getContext().Request.AcceptTypes;
-
-            string acceptTypesStr = "";
-
-            foreach (string type in acceptTypes) 
-                acceptTypesStr += "," + type;
-
-            getHttpWReq().Accept = acceptTypesStr.Substring(1);
+        /// <author>Avi Digmi</author>
+        protected void setAdditionalHeaders() {
 
             //  x-forwarded-for:
             System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
@@ -189,52 +195,21 @@ namespace ProxyServer
             foreach (IPAddress ip in ips.AddressList)
                 xForwardedFor = ip.ToString() + "," + xForwardedFor;
 
-            xForwardedFor = ips.AddressList.GetValue(ips.AddressList.Length - 1).ToString() + ", " + xForwardedFor;
+            setXForwardedFor(ips.AddressList.GetValue(ips.AddressList.Length - 1).ToString() + ", " + xForwardedFor);
 
-            getHttpWReq().Headers.Add("x-forwarded-for", xForwardedFor);
+            getHttpWReq().Headers.Add("x-forwarded-for", getXForwardedFor());
 
             //  proxy-version:
-            getHttpWReq().Headers.Add("proxy-version", "0.17");
-
-            //  content length
-            getHttpWReq().ContentLength =  getContext().Request.ContentLength64;
-
-            //  content type
-            getHttpWReq().ContentType = getContext().Request.ContentType;
-
-            //  transfer encoding and chuncked
-            string bla = getContext().Request.Headers.Get("Transfer-Encoding");
-
-            if (0 == getContext().Request.ContentEncoding.EncodingName.CompareTo("chunked") ||
-                (bla != null && 0 == bla.CompareTo("chunked")) )
-            {
-                Console.WriteLine("\n\n" + "chunked" + "\n");
-                setChuncked(true);
-                getHttpWReq().SendChunked = true;
-                getHttpWReq().TransferEncoding = getContext().Request.ContentEncoding.EncodingName;
-            }
+            getHttpWReq().Headers.Add("proxy-version", getProxyVersion());
         }
-*/
+
         /// <summary>
-        /// 
+        /// This method takes the headers of the original request (the one from the web client)
+        /// and copies them to the new web request
         /// </summary>
-        protected void setHeaders()
+        /// <author>Avi Digmi</author>
+        protected void setOriginalRequestHeaders()
         {
-            //  x-forwarded-for:
-            System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
-
-            string xForwardedFor = "";
-
-            foreach (IPAddress ip in ips.AddressList)
-                xForwardedFor = ip.ToString() + "," + xForwardedFor;
-
-            xForwardedFor = ips.AddressList.GetValue(ips.AddressList.Length - 1).ToString() + ", " + xForwardedFor;
-
-            getHttpWReq().Headers.Add("x-forwarded-for", xForwardedFor);
-
-            //  proxy-version:
-            getHttpWReq().Headers.Add("proxy-version", "0.17");
-
             NameValueCollection headers = getContext().Request.Headers;
 
             foreach(string header in headers.Keys){
@@ -288,11 +263,8 @@ namespace ProxyServer
 
                     case "Transfer-Encoding":
 
-                        if (0 == valueStr.CompareTo("chunked")) {
-
-                            setChuncked(true);
+                        if (0 == valueStr.CompareTo("chunked"))
                             getHttpWReq().SendChunked = true;
-                        }
 
                         getHttpWReq().TransferEncoding = valueStr;
                         break;
@@ -325,9 +297,11 @@ namespace ProxyServer
         }
 
         /// <summary>
-        /// 
+        /// This fuction is just for debugging,
+        /// it print the headers (without cookies) of te web request.
         /// </summary>
-        protected void printHeaders(){
+        /// <author>Avi Digmi</author>
+        protected void printWebRequestHeaders(){
 
             Console.WriteLine("\n--------------");
 
@@ -349,8 +323,10 @@ namespace ProxyServer
         }
 
         /// <summary>
-        /// 
+        /// This method takes the cookies of the original request (the one from the web client)
+        /// and copies them to the new web request
         /// </summary>
+        /// <author>Avi Digmi</author>
         protected void setTheCookies() {
 
             CookieCollection cookies = getContext().Request.Cookies;
@@ -363,8 +339,10 @@ namespace ProxyServer
         }
 
         /// <summary>
-        /// 
+        /// This method sends the new request to the web server and sets the response.
+        /// Using the GetResponse() method.
         /// </summary>
+        /// <author>Avi Digmi</author>
         protected bool forwardRegularRequest()
         {
             try {
@@ -372,7 +350,7 @@ namespace ProxyServer
             }
             catch (Exception e) {
 
-                Console.WriteLine("setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse()) ERROR:\n" + e.Message);
+                Console.WriteLine("forwardRegularRequest() ERROR:\n" + e.Message);
                 return false;
             }
 
@@ -380,8 +358,10 @@ namespace ProxyServer
         }
 
         /// <summary>
-        /// 
+        /// This method sends the new request to the web server.
+        /// Usies Streams for doing that.
         /// </summary>
+        /// <author>Avi Digmi</author>
         protected bool forwardChunckedRequest()
         {
             
@@ -404,7 +384,7 @@ namespace ProxyServer
             catch (Exception e)
             {
 
-                Console.WriteLine("forwardPostRequest() ERROR:\n" + e.Message);
+                Console.WriteLine("forwardChunckedRequest() ERROR:\n" + e.Message);
                 return false;
             }
             finally
@@ -425,8 +405,10 @@ namespace ProxyServer
         }
 
         /// <summary>
-        /// 
+        /// This method reads the response from the web server
+        /// and forwards it to the web client.
         /// </summary>
+        /// <author>Avi Digmi</author>
         protected void getResponseAndForwardIt() {
 
             int numOfBytes = 0;
@@ -453,7 +435,8 @@ namespace ProxyServer
                 }
             }
 
-            //getEmails(responeContent.ToString());
+            //  filters out the emails from the web server's response
+            //  getEmails(responeContent.ToString());
         }
 
         public void setContext(HttpListenerContext context){
@@ -488,14 +471,74 @@ namespace ProxyServer
             return _httpWResp;
         }
 
-        public void setChuncked(bool value)
-        {
-            _chuncked = value;
+        private string getProxyVersion() {
+            return _proxyVersion;
         }
 
-        public bool getChuncked()
-        {
-            return _chuncked;
+        private void setProxyVersion(string proxyVersion) {
+            _proxyVersion = proxyVersion;
+        }
+
+        private string getXForwardedFor() {
+            return _xForwardedFor;
+        }
+
+        private void setXForwardedFor(string xForwardedFor) {
+            _xForwardedFor = xForwardedFor;
         }
     }
+
+    /*
+        /// <summary>
+        /// 
+        /// </summary>
+        protected void setTheHeaders() {
+
+            //  User-Agent:
+            getHttpWReq().UserAgent = getContext().Request.UserAgent;
+
+            //  Accept:
+            string[] acceptTypes = getContext().Request.AcceptTypes;
+
+            string acceptTypesStr = "";
+
+            foreach (string type in acceptTypes) 
+                acceptTypesStr += "," + type;
+
+            getHttpWReq().Accept = acceptTypesStr.Substring(1);
+
+            //  x-forwarded-for:
+            System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+
+            string xForwardedFor = "";
+
+            foreach (IPAddress ip in ips.AddressList)
+                xForwardedFor = ip.ToString() + "," + xForwardedFor;
+
+            xForwardedFor = ips.AddressList.GetValue(ips.AddressList.Length - 1).ToString() + ", " + xForwardedFor;
+
+            getHttpWReq().Headers.Add("x-forwarded-for", xForwardedFor);
+
+            //  proxy-version:
+            getHttpWReq().Headers.Add("proxy-version", "0.17");
+
+            //  content length
+            getHttpWReq().ContentLength =  getContext().Request.ContentLength64;
+
+            //  content type
+            getHttpWReq().ContentType = getContext().Request.ContentType;
+
+            //  transfer encoding and chuncked
+            string bla = getContext().Request.Headers.Get("Transfer-Encoding");
+
+            if (0 == getContext().Request.ContentEncoding.EncodingName.CompareTo("chunked") ||
+                (bla != null && 0 == bla.CompareTo("chunked")) )
+            {
+                Console.WriteLine("\n\n" + "chunked" + "\n");
+                setChuncked(true);
+                getHttpWReq().SendChunked = true;
+                getHttpWReq().TransferEncoding = getContext().Request.ContentEncoding.EncodingName;
+            }
+        }
+*/
 }
