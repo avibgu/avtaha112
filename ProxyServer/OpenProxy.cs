@@ -50,6 +50,7 @@ namespace ProxyServer
             //  Sets the headers
             //  setTheHeaders();
             setHeadersNew();
+           // setHeadersNew2();
 
             //  Sets the cookies
             setTheCookies();
@@ -146,6 +147,66 @@ namespace ProxyServer
             }
         }
 
+
+        protected void setHeadersNew2()
+        {
+            
+            System.Collections.Specialized.NameValueCollection headers = getContext().Request.Headers;
+            for (int i = 0; i < headers.Count; i++)
+            {
+                string header = headers.Keys[i];
+                string value = headers[i];
+                switch (header)
+                {
+                    case "Accept":
+                        getHttpWReq().Accept = value;
+                        break;
+                    case "Connection":
+                        getHttpWReq().Connection = value;
+                        break;
+                    case "Content-Length":
+                        getHttpWReq().ContentLength = long.Parse(value);
+                        break;
+                    case "Content-Type":
+                        getHttpWReq().ContentType = value;
+                        break;
+                    case "Date":
+                        getHttpWReq().Date = DateTime.Parse(value);
+                        break;
+                    case "Expect":
+                        getHttpWReq().Expect = value;
+                        break;
+                    case "Host":
+                        getHttpWReq().Host = value;
+                        break;
+                    case "If-Modified-Since":
+                        getHttpWReq().IfModifiedSince = DateTime.Parse(value);
+                        break;
+                    case "Keep-Alive":
+                        int keep = int.Parse(value);
+                        if (keep == 1)
+                            getHttpWReq().KeepAlive = true;
+                        else
+                            getHttpWReq().KeepAlive = false;
+                        break;
+                    case "Referer":
+                        getHttpWReq().Referer = value;
+                        break;
+                    case "Transfer-Encoding":
+                        getHttpWReq().TransferEncoding = value;
+                        break;
+                    case "User-Agent":
+                        //if (m_mode.Equals("Open"))
+                            getHttpWReq().UserAgent = value;
+                        //else
+                        //     getHttpWReq().UserAgent = "Googlebot/2.1 (http://www.googlebot.com/bot.html) ";
+                        break;
+                    default:
+                        //request.Headers.Add(header, value);
+                        break;
+                }
+            }
+        }
         /// <summary>
         /// 
         /// </summary>
@@ -231,11 +292,11 @@ namespace ProxyServer
                 switch(header){
 
                     case "Proxy-Connection":
-                       // getHttpWReq().Headers.Add("Proxy-Connection", valueStr);
+                    //    getHttpWReq().Headers.Add("Proxy-Connection", valueStr);
                         break;
 
                     case "Keep-Alive":
-                        getHttpWReq().KeepAlive = (0 == valueStr.CompareTo("true")) ? true : false;
+                        getHttpWReq().Headers.Add("Keep-Alive", valueStr);
                         break;
 
                     case "Accept":
@@ -263,7 +324,7 @@ namespace ProxyServer
                         break;
 
                     case "User-Agent":
-                        getHttpWReq().UserAgent = valueStr;
+                        //getHttpWReq().UserAgent = getContext().Request.UserAgent;
                         break;
 
                     case "Transfer-Encoding":
@@ -417,7 +478,7 @@ namespace ProxyServer
                 }
             }
 
-            getEmails(responeContent.ToString());
+            //getEmails(responeContent.ToString());
         }
 
         public void setContext(HttpListenerContext context){
