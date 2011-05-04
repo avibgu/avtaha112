@@ -423,6 +423,12 @@ namespace ProxyServer
         }
 
 
+        /// <summary>
+        /// This is the main function of our program.
+        /// Initializes all the classes, manages the black and the white lists,
+        /// listens for new connections and creates threads to handle them.
+        /// </summary>
+        /// <param name="args">parameters from the user, the first one is the proxy port</param>
         static void Main(string[] args)
         {
             // Create driver instance.
