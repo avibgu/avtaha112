@@ -29,6 +29,7 @@ namespace ProxyServer
         private string loginPassword;
         private string state;
         public static List<User> users;
+        public string proxy_ip;
      
         /// <summary>
         /// Constructor.
@@ -46,6 +47,14 @@ namespace ProxyServer
 
             // Create the users list
             users = new List<User>();
+
+            // Set the external proxy IP
+            try
+            {
+                WebClient client = new WebClient();
+                this.proxy_ip = client.DownloadString("http://whatismyip.com/automation/n09230945.asp");
+            }
+            catch (Exception) { this.proxy_ip = "127.0.0.1"; }
 
             // Run the init function to read the configuration parameters.
             init();
@@ -98,6 +107,11 @@ namespace ProxyServer
         public string getState()
         {
             return state;
+        }
+
+        public string getProxyIp()
+        {
+            return this.proxy_ip;
         }
 
         /// <summary>
@@ -199,6 +213,7 @@ namespace ProxyServer
         public void login(HttpListenerContext context)
         {
                string response = System.IO.File.ReadAllText("..\\..\\LoginPage.htm");
+               response.Replace("127.0.0.1", getProxyIp());
                byte[] b = Encoding.UTF8.GetBytes(response);
                context.Response.ContentLength64 = b.Length;
                context.Response.OutputStream.Write(b, 0, b.Length);
@@ -451,7 +466,6 @@ namespace ProxyServer
             white = new StreamWriter("white-list.txt", true);
             black = new StreamWriter("black-list.txt", true);
 
-              
             ProxyFactory proxyFactory = null;
 
             // Check the state of the proxy - open or anonymous.
