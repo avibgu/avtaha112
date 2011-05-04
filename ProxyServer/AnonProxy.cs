@@ -5,20 +5,27 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net;
 
-namespace ProxyServer
-{
-    class AnonProxy : OpenProxy
-    {
+namespace ProxyServer {
+    class AnonProxy : OpenProxy {
 
-        public AnonProxy(HttpListenerContext context): base(context)
-        {
+        /// <summary>
+        /// This is the constructor of the Anonymous Proxy.
+        /// Calls the constructor of the Open Proxy.
+        /// </summary>
+        /// <param name="context"> Gets the context of the connection as argument</param>
+        /// <author>Avi Digmi</author>
+        public AnonProxy(HttpListenerContext context)
+            : base(context) {
         }
 
         /// <summary>
-        /// 
+        /// This is the main method of the Anonymous Proxy.
+        /// Responsable on taking the original request from the web browser
+        /// and sending it, after some modifications, to the web server.
+        /// It also handles the sent of the response from the web server to the web client.
         /// </summary>
-        public override void run()
-        {
+        /// <author>Avi Digmi</author>
+        public override void run() {
             /*
              * take the original request from the client to the remote server
              * and forward it as is to the remote server,
@@ -44,7 +51,7 @@ namespace ProxyServer
             getHttpWReq().UserAgent = "Mozilla/5.0";
 
             //  Print the headers
-            printHeaders();
+            printWebRequestHeaders();
 
             // Forward the request
 
@@ -86,5 +93,5 @@ namespace ProxyServer
 
             return;
         }
-    }        
+    }
 }
