@@ -91,8 +91,8 @@ namespace ProxyServer
                 if (getHttpWReq().SendChunked == true)
                     setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
 
-                //  getResponseAndForwardIt();
-                getResponseAndForwardIt2();
+                  getResponseAndForwardIt();
+             //   getResponseAndForwardIt2();
             }
             catch { }
 
@@ -243,7 +243,7 @@ namespace ProxyServer
                         break;
 
                     case "Accept-Encoding":
-                        getHttpWReq().Headers.Add("Accept-Encoding", valueStr);
+                     //   getHttpWReq().Headers.Add("Accept-Encoding", valueStr);
                         break;
 
                     case "Accept-Language":
