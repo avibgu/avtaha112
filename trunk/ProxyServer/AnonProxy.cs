@@ -28,7 +28,7 @@ namespace ProxyServer
             getUrlAndCreateWebRequest();
 
             //  Get emails from the request body
-            getEmails(getContext().Request.InputStream);
+            getRequestEmails();
 
             //  Set GET/POST method
             getHttpWReq().Method = getContext().Request.HttpMethod;
@@ -37,7 +37,7 @@ namespace ProxyServer
             setTheHeaders();
 
             // Forward the request
-            if (!forwardGetRequest()) return;
+            if (!forwardRegularRequest()) return;
 
             /*
              * take the response from the remote server

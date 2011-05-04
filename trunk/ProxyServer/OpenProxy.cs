@@ -17,6 +17,7 @@ namespace ProxyServer
         private Uri _url;
         private HttpWebRequest _httpWReq;
         private HttpWebResponse _httpWResp;
+        private bool _chuncked;
 
         public OpenProxy(HttpListenerContext context) {
             setContext(context);
@@ -37,7 +38,7 @@ namespace ProxyServer
             getUrlAndCreateWebRequest();
 
             //  Get emails from the request body
-            getEmails(getContext().Request.InputStream);
+            getRequestEmails();
           
             //  Set Default Credentials
             getHttpWReq().Credentials = CredentialCache.DefaultCredentials;
@@ -46,20 +47,24 @@ namespace ProxyServer
             getHttpWReq().Method = getContext().Request.HttpMethod;
 
             //  Sets the headers
-            setTheHeaders();
+            //  setTheHeaders();
+            setHeadersNew();
 
             //  Sets the cookies
             setTheCookies();
+
+            //  Print the headers
+            printHeaders();
 
             // Forward the request
 
             bool ans;
 
-            if (0 == getHttpWReq().Method.CompareTo("GET"))
-                ans = forwardGetRequest();
+            if (getChuncked() == false)
+                ans = forwardRegularRequest();
 
             else
-                ans = forwardPostRequest();
+                ans = forwardChunckedRequest();
 
             if (!ans) return;
 
@@ -70,13 +75,13 @@ namespace ProxyServer
             try
             {
                 // Get Response and Forward it
-                if (0 == getHttpWReq().Method.CompareTo("POST"))
+                if (getChuncked() == true)
                     setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
-
 
                 getResponseAndForwardIt();
             }
             catch { }
+
             // Close Connections..
             try { getContext().Response.OutputStream.Close(); } catch {}
             try { getHttpWResp().Close(); } catch {}
@@ -93,7 +98,7 @@ namespace ProxyServer
 
             string urlStr = _url.OriginalString;
             
-            int index = urlStr.IndexOf(":8080");
+            int index = urlStr.IndexOf(":" + Driver.port);
 
             urlStr = urlStr.Substring(0, index) + urlStr.Substring(index + 5);
 
@@ -105,21 +110,29 @@ namespace ProxyServer
         /// <summary>
         /// 
         /// </summary>
-        protected void getEmails(Stream stream) {
+        protected void getRequestEmails() {
+
+            Stream stream = getContext().Request.InputStream;
 
             StreamReader streamReader = new StreamReader(stream);
 
             string body = streamReader.ReadToEnd();
             string headers = getContext().Request.Headers.ToString();
-            string url = getContext().Request.RawUrl;
+            string url = _url.OriginalString;
         
             string stringToCheck = body + " " + headers + " " + url;
 
+            getEmails(stringToCheck);
+        }
+
+        protected void getEmails(string stringToCheck)
+        {
             Regex reg = new Regex("[a-zA-Z0-9]*%40[a-zA-Z0-9]*.[a-z.A-Z]*");
 
             Match match = reg.Match(stringToCheck);
 
-            while (match.Success) {
+            while (match.Success)
+            {
                 string email = match.Value;
 
                 lock (Driver.mailList)
@@ -169,7 +182,103 @@ namespace ProxyServer
             getHttpWReq().ContentLength =  getContext().Request.ContentLength64;
 
             //  content type
-            getHttpWReq().ContentType = "application/x-www-form-urlencoded";
+            getHttpWReq().ContentType = getContext().Request.ContentType;
+
+            //  transfer encoding and chuncked
+            string bla = getContext().Request.Headers.Get("Transfer-Encoding");
+
+            if (0 == getContext().Request.ContentEncoding.EncodingName.CompareTo("chunked") ||
+                (bla != null && 0 == bla.CompareTo("chunked")) )
+            {
+                Console.WriteLine("\n\n" + "chunked" + "\n");
+                setChuncked(true);
+                getHttpWReq().SendChunked = true;
+                getHttpWReq().TransferEncoding = getContext().Request.ContentEncoding.EncodingName;
+            }
+        }
+
+        protected void setHeadersNew()
+        {
+            NameValueCollection headers = getContext().Request.Headers;
+
+            foreach(string header in headers.Keys){
+
+                string[] values = headers.GetValues(header);
+
+                string valueStr = "";
+
+                foreach (string value in values)
+                    valueStr += value + ";";
+
+                valueStr = valueStr.Substring(0, valueStr.Length - 1);
+
+                switch(header){
+
+                    case "Proxy-Connection":
+                        //getHttpWReq(). = valueStr;
+                        break;
+
+                    case "Keep-Alive":
+                        getHttpWReq().KeepAlive = (0 == valueStr.CompareTo("true")) ? true : false;
+                        break;
+
+                    case "Accept":
+                        getHttpWReq().Accept = valueStr;
+                        break;
+
+                    case "Accept-Charset":
+                        //getHttpWReq().Char = valueStr;
+                        break;
+
+                    case "Accept-Encoding":
+                        //getHttpWReq().TransferEncoding = valueStr;
+                        break;
+
+                    case "Transfer-Encoding":
+                        getHttpWReq().TransferEncoding = valueStr;
+                        break;
+
+                    case "Accept-Language":
+                        //getHttpWReq(). = valueStr;
+                        break;
+
+                    case "Host":
+                        getHttpWReq().Host = valueStr;
+                        break;
+
+                    case "Referer":
+                        getHttpWReq().Referer = valueStr;
+                        break;
+
+                    case "User-Agent":
+                        getHttpWReq().UserAgent = valueStr;
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected void printHeaders(){
+
+            Console.WriteLine("\n--------------");
+
+            NameValueCollection headers = getHttpWReq().Headers;
+
+            foreach(string header in headers.Keys){
+
+                string[] values = headers.GetValues(header);
+
+                Console.Write(header + " : ");
+ 
+                foreach(string value in values)
+                    Console.Write(value);
+
+                Console.WriteLine();
+            }
+
+            Console.WriteLine("--------------\n");
         }
 
         /// <summary>
@@ -189,8 +298,8 @@ namespace ProxyServer
         /// <summary>
         /// 
         /// </summary>
-        protected bool forwardGetRequest() {
-
+        protected bool forwardRegularRequest()
+        {
             try {
                 setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
             }
@@ -206,7 +315,9 @@ namespace ProxyServer
         /// <summary>
         /// 
         /// </summary>
-        protected bool forwardPostRequest() {
+        protected bool forwardChunckedRequest()
+        {
+            
             Stream inputStream = null;
             StreamReader streamReader = null;
             Stream responseStream = null;
@@ -255,13 +366,15 @@ namespace ProxyServer
 
             Byte[] buffer = new Byte[32];
 
+            StringBuilder responeContent = new StringBuilder();
+
             Stream responseStream = getHttpWResp().GetResponseStream();
 
             while ((numOfBytes = responseStream.Read(buffer, 0, 32)) != 0) {
 
                 try
                 {
-
+                    responeContent.Append(buffer);
                     getContext().Response.OutputStream.Write(buffer, 0, numOfBytes);
 
                 }
@@ -271,8 +384,9 @@ namespace ProxyServer
                     Console.WriteLine("getContext().Response.OutputStream.Write(b, 0, b.Length) ERROR:\n" + e.Message);
                     return;
                 }
-          
             }
+
+            getEmails(responeContent.ToString());
         }
 
         public void setContext(HttpListenerContext context){
@@ -305,6 +419,16 @@ namespace ProxyServer
 
         public HttpWebResponse getHttpWResp(){
             return _httpWResp;
+        }
+
+        public void setChuncked(bool value)
+        {
+            _chuncked = value;
+        }
+
+        public bool getChuncked()
+        {
+            return _chuncked;
         }
     }
 }
