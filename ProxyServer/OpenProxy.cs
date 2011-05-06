@@ -259,11 +259,12 @@ namespace ProxyServer
                         break;
 
                     case "User-Agent":
-                        getHttpWReq().UserAgent = valueStr.Substring(0,valueStr.IndexOf(" "));
+                        int idx = valueStr.IndexOf(" ");
+                        if (idx >= 0)
+                            getHttpWReq().UserAgent = valueStr.Substring(0,idx);
                         break;
 
                     case "Transfer-Encoding":
-
                         if (0 == valueStr.CompareTo("chunked"))
                             getHttpWReq().SendChunked = true;
 
@@ -271,7 +272,9 @@ namespace ProxyServer
                         break;
 
                     case "Content-Length":
-                        getHttpWReq().ContentLength = Int64.Parse(valueStr);
+                        try {
+                            getHttpWReq().ContentLength = Int64.Parse(valueStr);
+                        } catch {}
                         break;
 
                     case "Content-Type":
@@ -279,7 +282,9 @@ namespace ProxyServer
                         break;
 
                     case "Date":
+                        try {
                         getHttpWReq().Date = DateTime.Parse(valueStr);
+                        } catch {}
                         break;
 
                     case "Expect":
@@ -291,7 +296,9 @@ namespace ProxyServer
                         break;
 
                     case "If-Modified-Since":
-                        getHttpWReq().IfModifiedSince = DateTime.Parse(valueStr);
+                        try {
+                            getHttpWReq().IfModifiedSince = DateTime.Parse(valueStr);
+                        } catch {}
                         break;
                 }
             }
@@ -440,49 +447,6 @@ namespace ProxyServer
             //  getEmails(responeContent.ToString());
         }
 
-        /// <summary>
-        /// This method reads the response from the web server
-        /// and forwards it to the web client.
-        /// </summary>
-        /// <author>Avi Digmi</author>
-        protected void getResponseAndForwardIt2() {
-
-            int numOfBytes = 0;
-
-            char[] buffer = new char[32];
-
-            StringBuilder responeContent = new StringBuilder();
-
-            Encoding encode;
-
-            if (getHttpWResp().CharacterSet.Contains("UTF") || getHttpWResp().CharacterSet.Contains("utf"))
-                encode = System.Text.Encoding.GetEncoding("UTF-8");
-            else
-                encode = System.Text.Encoding.GetEncoding("ASCII");
-
-            Stream responseStream = getHttpWResp().GetResponseStream();
-
-            StreamReader streamReader = new StreamReader(responseStream, encode);
-
-            StreamWriter streamWriter = new StreamWriter(getContext().Response.OutputStream);
-
-            while ((numOfBytes = streamReader.Read(buffer, 0, 32)) != 0) {
-
-                try {
-                    responeContent.Append(buffer);
-                    streamWriter.Write(buffer, 0, numOfBytes);
-                }
-                catch (Exception e) {
-
-                    Console.WriteLine("getContext().Response.OutputStream.Write(b, 0, b.Length) ERROR:\n" + e.Message);
-                    return;
-                }
-            }
-
-            //  filters out the emails from the web server's response
-            //  getEmails(responeContent.ToString());
-        }
-
         public void setContext(HttpListenerContext context){
             _context = context;
         }
@@ -532,58 +496,3 @@ namespace ProxyServer
         }
     }
 }
-
-
-/*
-    /// <summary>
-    /// 
-    /// </summary>
-    protected void setTheHeaders() {
-
-        //  User-Agent:
-        getHttpWReq().UserAgent = getContext().Request.UserAgent;
-
-        //  Accept:
-        string[] acceptTypes = getContext().Request.AcceptTypes;
-
-        string acceptTypesStr = "";
-
-        foreach (string type in acceptTypes) 
-            acceptTypesStr += "," + type;
-
-        getHttpWReq().Accept = acceptTypesStr.Substring(1);
-
-        //  x-forwarded-for:
-        System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
-
-        string xForwardedFor = "";
-
-        foreach (IPAddress ip in ips.AddressList)
-            xForwardedFor = ip.ToString() + "," + xForwardedFor;
-
-        xForwardedFor = ips.AddressList.GetValue(ips.AddressList.Length - 1).ToString() + ", " + xForwardedFor;
-
-        getHttpWReq().Headers.Add("x-forwarded-for", xForwardedFor);
-
-        //  proxy-version:
-        getHttpWReq().Headers.Add("proxy-version", "0.17");
-
-        //  content length
-        getHttpWReq().ContentLength =  getContext().Request.ContentLength64;
-
-        //  content type
-        getHttpWReq().ContentType = getContext().Request.ContentType;
-
-        //  transfer encoding and chuncked
-        string bla = getContext().Request.Headers.Get("Transfer-Encoding");
-
-        if (0 == getContext().Request.ContentEncoding.EncodingName.CompareTo("chunked") ||
-            (bla != null && 0 == bla.CompareTo("chunked")) )
-        {
-            Console.WriteLine("\n\n" + "chunked" + "\n");
-            setChuncked(true);
-            getHttpWReq().SendChunked = true;
-            getHttpWReq().TransferEncoding = getContext().Request.ContentEncoding.EncodingName;
-        }
-    }
-*/
