@@ -448,6 +448,8 @@ namespace ProxyServer
         {
             // Create driver instance.
             Driver driver = new Driver();
+            WebRequest.DefaultWebProxy = null;
+
 
             // Create the encrypted files.
 
