@@ -20,6 +20,7 @@ namespace ProxyServer
         ///  This class is the main class used to run the main function who waits for requests,to read the configuration files, and to 
         ///  handle the white-list, black-list and logger issues.
         /// </summary>
+        public static string port;
         public static StreamWriter white;
         public static StreamWriter black;
         public static StreamWriter logger;
@@ -484,13 +485,14 @@ namespace ProxyServer
             // Create the listener object.
             HttpListener listener = new HttpListener();
 
-            // args[0]= The proxy port.
-           // Driver.port = args[0];
+            
             if (args.Count() == 0)
             {
                 Console.WriteLine("You should specify port number!!!");
                 return;
             }
+            // args[0]= The proxy port.
+            Driver.port = args[0];
             listener.Prefixes.Add("http://*:" + args[0] + "/");
          
             // start the listener...
