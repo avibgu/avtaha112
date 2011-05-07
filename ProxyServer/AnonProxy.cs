@@ -48,7 +48,7 @@ namespace ProxyServer {
             setOriginalRequestHeaders();
 
             //  Sets a default User-Agent
-            getHttpWReq().UserAgent = "Mozilla/5.0";
+            getHttpWReq().UserAgent = "Googlebot/2.1";
 
             //  Print the headers
             printWebRequestHeaders();
