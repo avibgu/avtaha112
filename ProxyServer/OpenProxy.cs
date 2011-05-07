@@ -68,12 +68,15 @@ namespace ProxyServer
             //  Set GET/POST method
             getHttpWReq().Method = getContext().Request.HttpMethod;
 
+
+
             //  Sets the headers
             setOriginalRequestHeaders();
             setAdditionalHeaders();
-
+            
             //  Sets the cookies
             setTheCookies();
+          
 
             //  Print the headers
             printWebRequestHeaders();
@@ -81,12 +84,12 @@ namespace ProxyServer
             // Forward the request
             bool ans;
 
-            if (getHttpWReq().SendChunked == true || getContext().Request.HttpMethod == "POST")
-                ans = forwardChunckedRequest();
-            else
+        //    if (getHttpWReq().SendChunked == true || getContext().Request.HttpMethod == "POST")
+        //        ans = forwardChunckedRequest();
+        //    else
                 ans = forwardRegularRequest();
 
-            if (!ans) return;
+        //    if (!ans) return;*/
 
             /*
              * take the response from the remote server
@@ -95,8 +98,8 @@ namespace ProxyServer
             try
             {
                 // Get Response and Forward it
-                if (getHttpWReq().SendChunked == true || getContext().Request.HttpMethod == "POST")
-                    setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
+       //         if (getHttpWReq().SendChunked == true || getContext().Request.HttpMethod == "POST")
+         //           setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
 
                   getResponseAndForwardIt();
              //   getResponseAndForwardIt2();
@@ -151,7 +154,7 @@ namespace ProxyServer
             StreamReader streamReader = new StreamReader(stream);
 
             string body = streamReader.ReadToEnd();
-           // streamReader.Close();
+            streamReader.Close();
            // stream.Close();
             return body;
         }
@@ -234,15 +237,19 @@ namespace ProxyServer
                 string[] values = headers.GetValues(header);
 
                 foreach (string value in values) {
+                   switch (header) {
 
-                    switch (header) {
-
-                        case "Proxy-Connection":
+                     case "Proxy-Connection":
                             //    getHttpWReq().Headers.Add("Proxy-Connection", valueStr);
                             break;
 
                         case "Keep-Alive":
-                            getHttpWReq().Headers.Add("Keep-Alive", value);
+                          //  getHttpWReq().Headers.Add("Keep-Alive", value);
+                            int keep = int.Parse(value);
+                        if (keep != 0)
+                            getHttpWReq().KeepAlive = true;
+                        else
+                            getHttpWReq().KeepAlive = false;
                             break;
 
                         case "Accept":
@@ -250,7 +257,7 @@ namespace ProxyServer
                             break;
 
                         case "Accept-Charset":
-                            getHttpWReq().Headers.Add("Accept-Charset", value);
+                      //      getHttpWReq().Headers.Add("Accept-Charset", value);
                             break;
 
                         case "Accept-Encoding":
@@ -258,7 +265,7 @@ namespace ProxyServer
                             break;
 
                         case "Accept-Language":
-                            getHttpWReq().Headers.Add("Accept-Language", value);
+                        //    getHttpWReq().Headers.Add("Accept-Language", value);
                             break;
 
                         case "Host":
@@ -284,6 +291,7 @@ namespace ProxyServer
                             break;
 
                         case "Content-Length":
+                            
                             try {
                                 getHttpWReq().ContentLength = Int64.Parse(value);
                             }
@@ -320,18 +328,29 @@ namespace ProxyServer
                             break;
 
                         case "X-Powered-By":
-                            getHttpWReq().Headers.Add("X-Powered-By", value);
+                          //  getHttpWReq().Headers.Add("X-Powered-By", value);
                             break;
 
                         case "Cache-Control":
-                            getHttpWReq().Headers.Add("Cache-Control", value);
+                          //  getHttpWReq().Headers.Add("Cache-Control", value);
                             break;
 
                         case "Origin":
-                            getHttpWReq().Headers.Add("Origin", value);
+                         //   getHttpWReq().Headers.Add("Origin", value);
+                            break;
+                        default:
                             break;
                     }
                 }
+               
+            }
+            getHttpWReq().Method = getContext().Request.HttpMethod;
+            if (getHttpWReq().Method == "POST")
+            {
+                Stream responseStream = getHttpWReq().GetRequestStream();
+                // streamWriter = new StreamWriter(responseStream);
+                byte[] b = System.Text.Encoding.Default.GetBytes(_requestString);
+                responseStream.Write(b, 0, b.Length);
             }
         }
 
@@ -430,7 +449,7 @@ namespace ProxyServer
             {
                 if (getHttpWReq() != null)
                 {
-                    responseStream.Flush();
+                   // responseStream.Flush();
                     try
                     {
                         responseStream.Close();
