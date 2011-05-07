@@ -151,8 +151,8 @@ namespace ProxyServer
             StreamReader streamReader = new StreamReader(stream);
 
             string body = streamReader.ReadToEnd();
-            streamReader.Close();
-            stream.Close();
+           // streamReader.Close();
+           // stream.Close();
             return body;
         }
 
@@ -233,89 +233,103 @@ namespace ProxyServer
 
                 string[] values = headers.GetValues(header);
 
-                string valueStr = "";
+                foreach (string value in values) {
 
-                foreach (string value in values)
-                    valueStr += value + ";";
+                    switch (header) {
 
-                valueStr = valueStr.Substring(0, valueStr.Length - 1);
+                        case "Proxy-Connection":
+                            //    getHttpWReq().Headers.Add("Proxy-Connection", valueStr);
+                            break;
 
-                switch(header){
+                        case "Keep-Alive":
+                            getHttpWReq().Headers.Add("Keep-Alive", value);
+                            break;
 
-                    case "Proxy-Connection":
-                    //    getHttpWReq().Headers.Add("Proxy-Connection", valueStr);
-                        break;
+                        case "Accept":
+                            getHttpWReq().Accept += "," + value;
+                            break;
 
-                    case "Keep-Alive":
-                        getHttpWReq().Headers.Add("Keep-Alive", valueStr);
-                        break;
+                        case "Accept-Charset":
+                            getHttpWReq().Headers.Add("Accept-Charset", value);
+                            break;
 
-                    case "Accept":
-                        getHttpWReq().Accept = valueStr;
-                        break;
+                        case "Accept-Encoding":
+                            //  getHttpWReq().Headers.Add("Accept-Encoding", valueStr);
+                            break;
 
-                    case "Accept-Charset":
-                        getHttpWReq().Headers.Add("Accept-Charset", valueStr);
-                        break;
+                        case "Accept-Language":
+                            getHttpWReq().Headers.Add("Accept-Language", value);
+                            break;
 
-                    case "Accept-Encoding":
-                     //   getHttpWReq().Headers.Add("Accept-Encoding", valueStr);
-                        break;
+                        case "Host":
+                            getHttpWReq().Host = value;
+                            break;
 
-                    case "Accept-Language":
-                        getHttpWReq().Headers.Add("Accept-Language", valueStr);
-                        break;
+                        case "Referer":
+                            getHttpWReq().Referer = value;
+                            break;
 
-                    case "Host":
-                        getHttpWReq().Host = valueStr;
-                        break;
+                        case "User-Agent":
+                            int idx = value.IndexOf(" ");
+                            if (idx >= 0)
+                                getHttpWReq().UserAgent = value.Substring(0, idx);
+                            break;
 
-                    case "Referer":
-                        getHttpWReq().Referer = valueStr;
-                        break;
+                        case "Transfer-Encoding":
+                            if (0 == value.CompareTo("chunked"))
+                                getHttpWReq().SendChunked = true;
 
-                    case "User-Agent":
-                        int idx = valueStr.IndexOf(" ");
-                        if (idx >= 0)
-                            getHttpWReq().UserAgent = valueStr.Substring(0,idx);
-                        break;
+                            getHttpWReq().TransferEncoding = value;
+                            break;
 
-                    case "Transfer-Encoding":
-                        if (0 == valueStr.CompareTo("chunked"))
-                            getHttpWReq().SendChunked = true;
+                        case "Content-Length":
+                            try {
+                                getHttpWReq().ContentLength = Int64.Parse(value);
+                            }
+                            catch {
+                            }
+                            break;
 
-                        getHttpWReq().TransferEncoding = valueStr;
-                        break;
+                        case "Content-Type":
+                            getHttpWReq().ContentType = value;
+                            break;
 
-                    case "Content-Length":
-                        try {
-                            getHttpWReq().ContentLength = Int64.Parse(valueStr);
-                        } catch {}
-                        break;
+                        case "Date":
+                            try {
+                                getHttpWReq().Date = DateTime.Parse(value);
+                            }
+                            catch {
+                            }
+                            break;
 
-                    case "Content-Type":
-                        getHttpWReq().ContentType = valueStr;
-                        break;
+                        case "Expect":
+                            getHttpWReq().Expect = value;
+                            break;
 
-                    case "Date":
-                        try {
-                        getHttpWReq().Date = DateTime.Parse(valueStr);
-                        } catch {}
-                        break;
+                        case "Connection":
+                            getHttpWReq().Connection = value;
+                            break;
 
-                    case "Expect":
-                        getHttpWReq().Expect = valueStr;
-                        break;
+                        case "If-Modified-Since":
+                            try {
+                                getHttpWReq().IfModifiedSince = DateTime.Parse(value);
+                            }
+                            catch {
+                            }
+                            break;
 
-                    case "Connection":
-                        getHttpWReq().Connection = valueStr;
-                        break;
+                        case "X-Powered-By":
+                            getHttpWReq().Headers.Add("X-Powered-By", value);
+                            break;
 
-                    case "If-Modified-Since":
-                        try {
-                            getHttpWReq().IfModifiedSince = DateTime.Parse(valueStr);
-                        } catch {}
-                        break;
+                        case "Cache-Control":
+                            getHttpWReq().Headers.Add("Cache-Control", value);
+                            break;
+
+                        case "Origin":
+                            getHttpWReq().Headers.Add("Origin", value);
+                            break;
+                    }
                 }
             }
         }
@@ -338,7 +352,7 @@ namespace ProxyServer
                 Console.Write(header + " : ");
  
                 foreach(string value in values)
-                    Console.Write(value);
+                    Console.Write(value + "..." );
 
                 Console.WriteLine();
             }
