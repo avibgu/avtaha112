@@ -205,12 +205,14 @@ namespace ProxyServer
             //  x-forwarded-for:
             System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
 
-            string xForwardedFor = getContext().Request.UserHostAddress;
+//           string xForwardedFor = getContext().Request.UserHostAddress;
 
 //            foreach (IPAddress ip in ips.AddressList)
 //                xForwardedFor = ip.ToString() + "," + xForwardedFor;
+//
+//            setXForwardedFor(ips.AddressList.GetValue(ips.AddressList.Length - 1).ToString() + ", " + xForwardedFor);
 
-            setXForwardedFor(/*ips.AddressList.GetValue(ips.AddressList.Length - 1).ToString() + ", " +*/ xForwardedFor);
+            setXForwardedFor(getContext().Request.UserHostAddress);
 
             getHttpWReq().Headers.Add("x-forwarded-for", getXForwardedFor());
 
