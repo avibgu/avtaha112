@@ -11,11 +11,15 @@ using System.Diagnostics;
 using System.Configuration;
 using System.Text.RegularExpressions;
 
+
 namespace ProxyServer
 {
     class Driver
     {
-        public static string port;
+        /// <summary>
+        ///  This class is the main class used to run the main function who waits for requests,to read the configuration files, and to 
+        ///  handle the white-list, black-list and logger issues.
+        /// </summary>
         public static StreamWriter white;
         public static StreamWriter black;
         public static StreamWriter logger;
@@ -81,10 +85,10 @@ namespace ProxyServer
             loginPassword = ConfigurationManager.AppSettings["loginPassword"];
 
             // Create the logger file.
-            logger = new StreamWriter("Logger.txt", false);
-            bool fileExists = File.Exists("Logger.txt");
+            logger = new StreamWriter("..//..//Logger.txt", false);
+            bool fileExists = File.Exists("..//..//Logger.txt");
             if (!fileExists)
-                File.Create("Logger.txt");
+                File.Create("..//..//Logger.txt");
             logger.WriteLine("Starting...");
             logger.Flush();
 
@@ -461,12 +465,12 @@ namespace ProxyServer
              black.Close();*/
               
             // Decrypt the files to the lists.
-            driver.DecryptSiteToList("black-list.txt", driver.Black_list);
-            driver.DecryptIpToList("white-list.txt", driver.White_list);
+            driver.DecryptSiteToList(ConfigurationManager.AppSettings["black-list"], driver.Black_list);
+            driver.DecryptIpToList(ConfigurationManager.AppSettings["white-list"], driver.White_list);
           
             // Create the stream writers of the white users and black sites.
-            white = new StreamWriter("white-list.txt", true);
-            black = new StreamWriter("black-list.txt", true);
+            white = new StreamWriter(ConfigurationManager.AppSettings["white-list"], true);
+            black = new StreamWriter(ConfigurationManager.AppSettings["black-list"], true);
 
             ProxyFactory proxyFactory = null;
 
@@ -481,8 +485,13 @@ namespace ProxyServer
             HttpListener listener = new HttpListener();
 
             // args[0]= The proxy port.
-            Driver.port = args[0];
-            listener.Prefixes.Add("http://*:" + Driver.port + "/");
+           // Driver.port = args[0];
+            if (args.Count() == 0)
+            {
+                Console.WriteLine("You should specify port number!!!");
+                return;
+            }
+            listener.Prefixes.Add("http://*:" + args[0] + "/");
          
             // start the listener...
             listener.Start();

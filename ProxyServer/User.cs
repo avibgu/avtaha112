@@ -7,6 +7,9 @@ namespace ProxyServer
 {
     class User
     {
+        /// <summary>
+        /// The user class holds information about a client. Used to check if the client send more than X requests in Y seconds.
+        /// </summary>
         private string ip;
         private List<DateTime> requests;
         private int X;
