@@ -270,9 +270,10 @@ namespace ProxyServer
                             break;
 
                         case "User-Agent":
-                            int idx = value.IndexOf(" ");
-                            if (idx >= 0)
-                                getHttpWReq().UserAgent = value.Substring(0, idx);
+                            if (getHttpWReq().UserAgent == null)
+                                getHttpWReq().UserAgent = value;
+                            else
+                                getHttpWReq().UserAgent += " " + value;
                             break;
 
                         case "Transfer-Encoding":
@@ -408,11 +409,15 @@ namespace ProxyServer
 
             try
             {
+                getHttpWReq().Method = "POST";
+                getHttpWReq().ContentType = "application/x-www-form-urlencoded";
+                getHttpWReq().ContentLength = _requestString.Length;
+
 
                 responseStream = getHttpWReq().GetRequestStream();
-               // streamWriter = new StreamWriter(responseStream);
-                byte[] b = System.Text.Encoding.Default.GetBytes(_requestString);
-                responseStream.Write(b,0,b.Length);
+                UTF8Encoding encoding = new UTF8Encoding();
+                byte[] bytes = encoding.GetBytes(_requestString);
+                responseStream.Write(bytes, 0, bytes.Length);
                 
             }
             catch (Exception e)
