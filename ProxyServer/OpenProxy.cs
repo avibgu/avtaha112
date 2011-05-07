@@ -385,21 +385,15 @@ namespace ProxyServer
         protected bool forwardChunckedRequest()
         {
             
-            Stream inputStream = null;
-            StreamReader streamReader = null;
             Stream responseStream = null;
             StreamWriter streamWriter = null;
 
             try
             {
 
-                inputStream = getContext().Request.InputStream;
-                streamReader = new StreamReader(inputStream);
-                string body = streamReader.ReadToEnd();
-
                 responseStream = getHttpWReq().GetRequestStream();
                 streamWriter = new StreamWriter(responseStream);
-                streamWriter.Write(body);
+                streamWriter.Write(_requestString);
             }
             catch (Exception e)
             {
