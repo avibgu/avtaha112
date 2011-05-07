@@ -345,14 +345,17 @@ namespace ProxyServer
                
             }
             getHttpWReq().Method = getContext().Request.HttpMethod;
-            if (getHttpWReq().Method == "POST")
-            {
-                getHttpWReq().ContentType = "application/x-www-form-urlencoded";
-                getHttpWReq().ContentLength = _requestString.Length;
-                Stream responseStream = getHttpWReq().GetRequestStream();
-                // streamWriter = new StreamWriter(responseStream);
-                byte[] b = System.Text.Encoding.Default.GetBytes(_requestString);
-                responseStream.Write(b, 0, b.Length);
+            try {
+                if (getHttpWReq().Method == "POST") {
+                    getHttpWReq().ContentType = "application/x-www-form-urlencoded";
+                    getHttpWReq().ContentLength = _requestString.Length;
+                    Stream responseStream = getHttpWReq().GetRequestStream();
+                    // streamWriter = new StreamWriter(responseStream);
+                    byte[] b = System.Text.Encoding.Default.GetBytes(_requestString);
+                    responseStream.Write(b, 0, b.Length);
+                }
+            }
+            catch {
             }
         }
 
