@@ -22,6 +22,7 @@ namespace ProxyServer
         private HttpWebResponse _httpWResp;
         private string _xForwardedFor;
         private string _proxyVersion;
+        public string _requestString;
 
         /// <summary>
         /// This is the constructor of the Open Proxy.
@@ -51,6 +52,9 @@ namespace ProxyServer
              * and forward it as is to the remote server,
              * while adding header's values.
              */
+
+            // Set the input stream of the request
+            _requestString = getInputStream();
 
             //  Get URL and create Web Request
             getUrlAndCreateWebRequest();
@@ -132,17 +136,22 @@ namespace ProxyServer
         /// <author>Avi Digmi</author>
         protected void getRequestEmails() {
 
+            string headers = getContext().Request.Headers.ToString();
+            string url = _url.OriginalString;
+        
+            string stringToCheck = _requestString + " " + headers + " " + url;
+
+            getEmails(stringToCheck);
+        }
+
+        private string getInputStream()
+        {
             Stream stream = getContext().Request.InputStream;
 
             StreamReader streamReader = new StreamReader(stream);
 
             string body = streamReader.ReadToEnd();
-            string headers = getContext().Request.Headers.ToString();
-            string url = _url.OriginalString;
-        
-            string stringToCheck = body + " " + headers + " " + url;
-
-            getEmails(stringToCheck);
+            return body;
         }
 
         /// <summary>
