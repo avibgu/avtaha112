@@ -13,6 +13,9 @@ namespace ProxyServer
 {
     class OpenProxy : Proxy
     {
+        /// <summary>
+        ///  This class used for the open state. run the user request thread.
+        /// </summary>
         private HttpListenerContext _context;
         private Uri _url;
         private HttpWebRequest _httpWReq;
@@ -443,8 +446,6 @@ namespace ProxyServer
                 }
             }
 
-            //  filters out the emails from the web server's response
-            //  getEmails(responeContent.ToString());
         }
 
         public void setContext(HttpListenerContext context){

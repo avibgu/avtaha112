@@ -22,6 +22,9 @@ namespace ProxyServer
 {
     interface Proxy
     {
+        /// <summary>
+        /// Interface for the proxy server.
+        /// </summary>
         void run();
         void setContext(HttpListenerContext context);
     }
