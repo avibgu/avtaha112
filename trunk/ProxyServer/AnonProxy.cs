@@ -57,10 +57,10 @@ namespace ProxyServer {
 
             bool ans;
 
-            if (getHttpWReq().SendChunked == false)
-                ans = forwardRegularRequest();
-            else
+            if (getHttpWReq().SendChunked == true || getContext().Request.HttpMethod == "POST")
                 ans = forwardChunckedRequest();
+            else
+                ans = forwardRegularRequest();
 
             if (!ans)
                 return;
@@ -71,7 +71,7 @@ namespace ProxyServer {
              */
             try {
                 // Get Response and Forward it
-                if (getHttpWReq().SendChunked == true)
+                if (getHttpWReq().SendChunked == true || getContext().Request.HttpMethod == "POST")
                     setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
 
                 getResponseAndForwardIt();
