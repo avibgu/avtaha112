@@ -352,7 +352,7 @@ namespace ProxyServer
                 Console.Write(header + " : ");
  
                 foreach(string value in values)
-                    Console.Write(value + "..." );
+                    Console.Write(value + "," );
 
                 Console.WriteLine();
             }
