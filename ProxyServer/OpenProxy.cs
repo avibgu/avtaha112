@@ -151,6 +151,8 @@ namespace ProxyServer
             StreamReader streamReader = new StreamReader(stream);
 
             string body = streamReader.ReadToEnd();
+            streamReader.Close();
+            stream.Close();
             return body;
         }
 
@@ -392,8 +394,10 @@ namespace ProxyServer
             {
 
                 responseStream = getHttpWReq().GetRequestStream();
-                streamWriter = new StreamWriter(responseStream);
-                streamWriter.Write(_requestString);
+               // streamWriter = new StreamWriter(responseStream);
+                byte[] b = System.Text.Encoding.Default.GetBytes(_requestString);
+                responseStream.Write(b,0,b.Length);
+                
             }
             catch (Exception e)
             {
