@@ -26,11 +26,15 @@ namespace ProxyServer {
         /// </summary>
         /// <author>Avi Digmi</author>
         public override void run() {
+
             /*
              * take the original request from the client to the remote server
              * and forward it as is to the remote server,
              * while adding header's values.
              */
+
+            // Set the input stream of the request
+            _requestString = getInputStream();
 
             //  Get URL and create Web Request
             getUrlAndCreateWebRequest();
@@ -48,13 +52,12 @@ namespace ProxyServer {
             setOriginalRequestHeaders();
 
             //  Sets a default User-Agent
-            getHttpWReq().UserAgent = "Googlebot/2.1";
+            getHttpWReq().UserAgent = "Mozilla/5.0";
 
             //  Print the headers
             printWebRequestHeaders();
 
             // Forward the request
-
             bool ans;
 
             if (getHttpWReq().SendChunked == true || getContext().Request.HttpMethod == "POST")
