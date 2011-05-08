@@ -16,12 +16,12 @@ namespace ProxyServer
         /// <summary>
         ///  This class used for the open state. run the user request thread.
         /// </summary>
-        private HttpListenerContext _context;
-        private Uri _url;
-        private HttpWebRequest _httpWReq;
-        private HttpWebResponse _httpWResp;
-        private string _xForwardedFor;
-        private string _proxyVersion;
+        protected HttpListenerContext _context;
+        protected Uri _url;
+        protected HttpWebRequest _httpWReq;
+        protected HttpWebResponse _httpWResp;
+        protected string _xForwardedFor;
+        protected string _proxyVersion;
         public string _requestString;
 
         /// <summary>
@@ -75,20 +75,18 @@ namespace ProxyServer
             //  Sets the cookies
             setTheCookies();
 
-            bla();
-
             //  Print the headers
             printWebRequestHeaders();
 
             // Forward the request
             bool ans;
 
-        //    if (getHttpWReq().SendChunked == true || getContext().Request.HttpMethod == "POST")
-        //        ans = forwardChunckedRequest();
-        //    else
+            if (getHttpWReq().SendChunked == true || getContext().Request.HttpMethod == "POST")
+                ans = forwardChunckedRequest();
+            else
                 ans = forwardRegularRequest();
 
-        //    if (!ans) return;*/
+            if (!ans) return;
 
             /*
              * take the response from the remote server
@@ -97,11 +95,10 @@ namespace ProxyServer
             try
             {
                 // Get Response and Forward it
-       //         if (getHttpWReq().SendChunked == true || getContext().Request.HttpMethod == "POST")
-         //           setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
+                if (getHttpWReq().SendChunked == true || getContext().Request.HttpMethod == "POST")
+                    setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
 
                   getResponseAndForwardIt();
-             //   getResponseAndForwardIt2();
             }
             catch { }
 
@@ -146,7 +143,7 @@ namespace ProxyServer
             getEmails(stringToCheck);
         }
 
-        private string getInputStream()
+        protected string getInputStream()
         {
             Stream stream = getContext().Request.InputStream;
 
@@ -279,8 +276,6 @@ namespace ProxyServer
                         case "User-Agent":
                             if (getHttpWReq().UserAgent == null)
                                 getHttpWReq().UserAgent = values[0].Substring(0,values[0].IndexOf(" "));
-                           // else
-                            //    getHttpWReq().UserAgent += " " + value;
                             break;
 
                         case "Transfer-Encoding":
@@ -342,26 +337,6 @@ namespace ProxyServer
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        protected void bla() {
-
-            getHttpWReq().Method = getContext().Request.HttpMethod;
-            try {
-                if (getHttpWReq().Method == "POST") {
-                    getHttpWReq().ContentType = "application/x-www-form-urlencoded";
-                    getHttpWReq().ContentLength = _requestString.Length;
-                    Stream responseStream = getHttpWReq().GetRequestStream();
-                    // streamWriter = new StreamWriter(responseStream);
-                    byte[] b = System.Text.Encoding.Default.GetBytes(_requestString);
-                    responseStream.Write(b, 0, b.Length);
-                }
-            }
-            catch {
-            }
-        }
-
-        /// <summary>
         /// This fuction is just for debugging,
         /// it print the headers (without cookies) of te web request.
         /// </summary>
@@ -408,8 +383,8 @@ namespace ProxyServer
         /// Using the GetResponse() method.
         /// </summary>
         /// <author>Avi Digmi</author>
-        protected bool forwardRegularRequest()
-        {
+        protected bool forwardRegularRequest() {
+
             try {
                 setHttpWResp((HttpWebResponse)getHttpWReq().GetResponse());
             }
@@ -427,46 +402,37 @@ namespace ProxyServer
         /// Usies Streams for doing that.
         /// </summary>
         /// <author>Avi Digmi</author>
-        protected bool forwardChunckedRequest()
-        {
-            
-            Stream responseStream = null;
-            StreamWriter streamWriter = null;
+        protected bool forwardChunckedRequest() {
 
-            try
-            {
+            Stream responseStream = null;
+
+            try {
+
                 getHttpWReq().Method = "POST";
                 getHttpWReq().ContentType = "application/x-www-form-urlencoded";
                 getHttpWReq().ContentLength = _requestString.Length;
 
-
                 responseStream = getHttpWReq().GetRequestStream();
                 UTF8Encoding encoding = new UTF8Encoding();
-                byte[] bytes = encoding.GetBytes(_requestString);
-                responseStream.Write(bytes, 0, bytes.Length);
-                
+                byte[] b = System.Text.Encoding.Default.GetBytes(_requestString);
+                responseStream.Write(b, 0, b.Length);
             }
-            catch (Exception e)
-            {
+            catch (Exception e) {
 
                 Console.WriteLine("forwardChunckedRequest() ERROR:\n" + e.Message);
                 return false;
             }
-            finally
-            {
-                if (getHttpWReq() != null)
-                {
-                   // responseStream.Flush();
-                    try
-                    {
+            finally {
+
+                if (getHttpWReq() != null) {
+
+                    try {
                         responseStream.Close();
-                    }
-                    catch { }
+                    } catch { }
                 }
             }
        
             return true;
-
         }
 
         /// <summary>
@@ -534,19 +500,19 @@ namespace ProxyServer
             return _httpWResp;
         }
 
-        private string getProxyVersion() {
+        protected string getProxyVersion() {
             return _proxyVersion;
         }
 
-        private void setProxyVersion(string proxyVersion) {
+        protected void setProxyVersion(string proxyVersion) {
             _proxyVersion = proxyVersion;
         }
 
-        private string getXForwardedFor() {
+        protected string getXForwardedFor() {
             return _xForwardedFor;
         }
 
-        private void setXForwardedFor(string xForwardedFor) {
+        protected void setXForwardedFor(string xForwardedFor) {
             _xForwardedFor = xForwardedFor;
         }
     }
