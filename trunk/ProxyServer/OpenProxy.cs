@@ -68,15 +68,14 @@ namespace ProxyServer
             //  Set GET/POST method
             getHttpWReq().Method = getContext().Request.HttpMethod;
 
-
-
             //  Sets the headers
             setOriginalRequestHeaders();
             setAdditionalHeaders();
             
             //  Sets the cookies
             setTheCookies();
-          
+
+            bla();
 
             //  Print the headers
             printWebRequestHeaders();
@@ -208,16 +207,17 @@ namespace ProxyServer
             //  x-forwarded-for:
             System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
 
-//           string xForwardedFor = getContext().Request.UserHostAddress;
+            IPAddress ip = ips.AddressList[ips.AddressList.Length - 1];
 
-//            foreach (IPAddress ip in ips.AddressList)
-//                xForwardedFor = ip.ToString() + "," + xForwardedFor;
-//
-//            setXForwardedFor(ips.AddressList.GetValue(ips.AddressList.Length - 1).ToString() + ", " + xForwardedFor);
+            string xff = getContext().Request.RemoteEndPoint.Address.ToString();
 
-            setXForwardedFor(getContext().Request.UserHostAddress);
+            setXForwardedFor(xff);
 
-            getHttpWReq().Headers.Add("x-forwarded-for", getXForwardedFor());
+            if (xff.Equals("127.0.0.1"))
+                getHttpWReq().Headers.Add("X-Forwarded-For", ip.ToString());
+
+            else
+                getHttpWReq().Headers.Add("X-Forwarded-For", getXForwardedFor());
 
             //  proxy-version:
             getHttpWReq().Headers.Add("proxy-version", getProxyVersion());
@@ -244,7 +244,7 @@ namespace ProxyServer
                             break;
 
                         case "Keep-Alive":
-                          //  getHttpWReq().Headers.Add("Keep-Alive", value);
+                            getHttpWReq().Headers.Add("Keep-Alive", value);
                             int keep = int.Parse(value);
                         if (keep != 0)
                             getHttpWReq().KeepAlive = true;
@@ -257,15 +257,15 @@ namespace ProxyServer
                             break;
 
                         case "Accept-Charset":
-                      //      getHttpWReq().Headers.Add("Accept-Charset", value);
+                            getHttpWReq().Headers.Add("Accept-Charset", value);
                             break;
 
                         case "Accept-Encoding":
-                            //  getHttpWReq().Headers.Add("Accept-Encoding", valueStr);
+                            //getHttpWReq().Headers.Add("Accept-Encoding", value);
                             break;
 
                         case "Accept-Language":
-                        //    getHttpWReq().Headers.Add("Accept-Language", value);
+                            getHttpWReq().Headers.Add("Accept-Language", value);
                             break;
 
                         case "Host":
@@ -278,9 +278,9 @@ namespace ProxyServer
 
                         case "User-Agent":
                             if (getHttpWReq().UserAgent == null)
-                                getHttpWReq().UserAgent = value;
-                            else
-                                getHttpWReq().UserAgent += " " + value;
+                                getHttpWReq().UserAgent = values[0].Substring(0,values[0].IndexOf(" "));
+                           // else
+                            //    getHttpWReq().UserAgent += " " + value;
                             break;
 
                         case "Transfer-Encoding":
@@ -294,9 +294,7 @@ namespace ProxyServer
                             
                             try {
                                 getHttpWReq().ContentLength = Int64.Parse(value);
-                            }
-                            catch {
-                            }
+                            } catch {}
                             break;
 
                         case "Content-Type":
@@ -306,9 +304,7 @@ namespace ProxyServer
                         case "Date":
                             try {
                                 getHttpWReq().Date = DateTime.Parse(value);
-                            }
-                            catch {
-                            }
+                            } catch {}
                             break;
 
                         case "Expect":
@@ -322,28 +318,34 @@ namespace ProxyServer
                         case "If-Modified-Since":
                             try {
                                 getHttpWReq().IfModifiedSince = DateTime.Parse(value);
-                            }
-                            catch {
-                            }
+                            } catch {}
                             break;
 
                         case "X-Powered-By":
-                          //  getHttpWReq().Headers.Add("X-Powered-By", value);
+                            getHttpWReq().Headers.Add("X-Powered-By", value);
                             break;
 
                         case "Cache-Control":
-                          //  getHttpWReq().Headers.Add("Cache-Control", value);
+                            getHttpWReq().Headers.Add("Cache-Control", value);
                             break;
 
                         case "Origin":
-                         //   getHttpWReq().Headers.Add("Origin", value);
+                            getHttpWReq().Headers.Add("Origin", value);
                             break;
+
                         default:
                             break;
                     }
                 }
                
             }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected void bla() {
+
             getHttpWReq().Method = getContext().Request.HttpMethod;
             try {
                 if (getHttpWReq().Method == "POST") {
