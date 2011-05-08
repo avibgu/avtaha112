@@ -202,15 +202,17 @@ namespace ProxyServer
         protected void setAdditionalHeaders() {
 
             //  x-forwarded-for:
-            System.Net.IPHostEntry ips = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+            System.Net.IPHostEntry proxyIps = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
 
-            IPAddress ip = ips.AddressList[ips.AddressList.Length - 1];
+            IPAddress ip = new IPAddress(new byte[]{127,0,0,1});
 
-            string xff = getContext().Request.RemoteEndPoint.Address.ToString();
+            foreach (IPAddress x in proxyIps.AddressList)
+                if (x.AddressFamily == AddressFamily.InterNetwork)
+                    ip = x;
 
-            setXForwardedFor(xff);
+            setXForwardedFor(getContext().Request.RemoteEndPoint.Address.ToString());
 
-            if (xff.Equals("127.0.0.1"))
+            if (getXForwardedFor().Equals("127.0.0.1"))
                 getHttpWReq().Headers.Add("X-Forwarded-For", ip.ToString());
 
             else
