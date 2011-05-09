@@ -12,10 +12,8 @@ using System.Configuration;
 using System.Text.RegularExpressions;
 
 
-namespace ProxyServer
-{
-    class Driver
-    {
+namespace ProxyServer {
+    class Driver {
         /// <summary>
         ///  This class is the main class used to run the main function who waits for requests,to read the configuration files, and to 
         ///  handle the white-list, black-list and logger issues.
@@ -35,16 +33,15 @@ namespace ProxyServer
         private string state;
         public static List<User> users;
         public string proxy_ip;
-     
+
         /// <summary>
         /// Constructor.
         /// Used to initialize the fields of the class.
         /// </summary>
-        public Driver()
-        {
+        public Driver() {
             Black_list = new List<string>();
             White_list = new List<string>();
-                    
+
             // Create the triple des object.
             tDESalg = new TripleDESCryptoServiceProvider();
             tDESalg.Key = Encoding.ASCII.GetBytes("passwordDR0wSS@P6660juht");
@@ -53,7 +50,7 @@ namespace ProxyServer
             // Create the users list
             users = new List<User>();
 
-            
+
 
             // Run the init function to read the configuration parameters.
             init();
@@ -64,8 +61,7 @@ namespace ProxyServer
         /// logger and the mail list file.
         /// <author> Shiran Gabay </author>
         /// </summary>
-        public void init()
-        {
+        public void init() {
             // read the password from configuration file
             string passFile = ConfigurationManager.AppSettings["password"];
             StreamReader file = new StreamReader(passFile);
@@ -98,25 +94,23 @@ namespace ProxyServer
             state = ConfigurationManager.AppSettings["state"];
         }
 
-        public TripleDESCryptoServiceProvider getCrypto()
-        {
+        public TripleDESCryptoServiceProvider getCrypto() {
             return tDESalg;
         }
 
-        public string getState()
-        {
+        public string getState() {
             return state;
         }
 
-        public string getProxyIp()
-        {
+        public string getProxyIp() {
             // Set the external proxy IP
-            try
-            {
+            try {
                 WebClient client = new WebClient();
                 return client.DownloadString("http://whatismyip.com/automation/n09230945.asp");
             }
-            catch (Exception) {  return "127.0.0.1"; }
+            catch (Exception) {
+                return "127.0.0.1";
+            }
         }
 
         /// <summary>
@@ -124,12 +118,11 @@ namespace ProxyServer
         /// <author> Shiran Gabay </author>
         /// </summary>
         /// <param name="site"> The name of the new blocked site.</param>
-        public void addBlackIp(string site)
-        {
+        public void addBlackIp(string site) {
             Black_list.Add(site);
             black.WriteLine(System.Text.ASCIIEncoding.Unicode.GetString(EncryptTextToMemory(site)));
             black.Flush();
-            
+
         }
 
         /// <summary>
@@ -137,9 +130,8 @@ namespace ProxyServer
         /// <author> Shiran Gabay </author>
         /// </summary>
         /// <param name="site"> The ip to enter.</param>
-        public void addWhiteIp(string ip)
-        {
-            
+        public void addWhiteIp(string ip) {
+
             // Add the ip to the white list.
             White_list.Add(ip);
             // Encrypt the ip and write it to the white list file.
@@ -155,16 +147,13 @@ namespace ProxyServer
         /// <author> Shiran Gabay </author>
         /// <param name="ip"> the ip of the returned object.</param>
         /// <returns>the user object with the given ip.</returns>
-        public User getUser(string ip)
-        {
-           for (int i = 0; i < users.Count ; ++i)
-            {
-               if(ip.Equals(users[i].getIp()))
-               {
+        public User getUser(string ip) {
+            for (int i = 0; i < users.Count; ++i) {
+                if (ip.Equals(users[i].getIp())) {
                     return users[i];
                 }
             }
-                return null;
+            return null;
         }
 
         /// <summary>
@@ -172,13 +161,10 @@ namespace ProxyServer
         /// </summary>
         /// <author> Shiran Gabay </author>
         /// <param name="ip"> The ip to remove. </param>
-        public void removeWhiteIp(string ip)
-        {
+        public void removeWhiteIp(string ip) {
             // Find the user and remove it from the users list.
-            for (int i = 0; i < users.Count; ++i)
-            {
-                if (users[i].getIp().Equals(ip))
-                {
+            for (int i = 0; i < users.Count; ++i) {
+                if (users[i].getIp().Equals(ip)) {
                     users.RemoveAt(i);
                     break;
                 }
@@ -187,27 +173,23 @@ namespace ProxyServer
             White_list.Remove(ip);
         }
 
-        public bool inBlackList(string site)
-        {
-            for (int i=0; i<Black_list.Count; ++i)
-            {
-                if (Black_list[i].Contains(site) )
+        public bool inBlackList(string site) {
+            for (int i = 0; i < Black_list.Count; ++i) {
+                if (Black_list[i].Contains(site))
                     return true;
             }
-             
+
             return false;
-  
+
         }
 
-        public bool inWhiteList(string ip)
-        {
-           for (int i=0; i < White_list.Count; ++i)
-            {
+        public bool inWhiteList(string ip) {
+            for (int i = 0; i < White_list.Count; ++i) {
                 Console.WriteLine("INWHITELIST" + White_list[i] + "DGFD");
                 if (White_list[i].Contains(ip))
                     return true;
             }
-             
+
             return false;
         }
 
@@ -216,10 +198,8 @@ namespace ProxyServer
         /// </summary>
         /// <author> Shiran Gabay </author>
         /// <param name="context">The context of the request.</param>
-        public void login(HttpListenerContext context)
-        {
-            try
-            {
+        public void login(HttpListenerContext context) {
+            try {
                 string response = System.IO.File.ReadAllText("..\\..\\LoginPage.htm");
                 string ip = getProxyIp();
                 response = response.Replace("127.0.0.1", getProxyIp());
@@ -228,7 +208,8 @@ namespace ProxyServer
                 context.Response.OutputStream.Write(b, 0, b.Length);
                 context.Response.OutputStream.Close();
             }
-            catch { }
+            catch {
+            }
         }
 
 
@@ -237,17 +218,15 @@ namespace ProxyServer
         /// </summary>
         /// <param name="Data">The string to encrypt.</param>
         /// <returns>The encrypted data</returns>
-        public static byte[] EncryptTextToMemory(string Data)
-        {
-            try
-            {
+        public static byte[] EncryptTextToMemory(string Data) {
+            try {
                 // Create a MemoryStream.
                 MemoryStream mStream = new MemoryStream();
 
                 // Create a CryptoStream using the MemoryStream 
                 // and the passed key and initialization vector (IV).
                 CryptoStream cStream = new CryptoStream(mStream,
-                    new TripleDESCryptoServiceProvider().CreateEncryptor(tDESalg.Key,tDESalg.IV),
+                    new TripleDESCryptoServiceProvider().CreateEncryptor(tDESalg.Key, tDESalg.IV),
                     CryptoStreamMode.Write);
 
                 // Convert the passed string to a byte array.
@@ -269,8 +248,7 @@ namespace ProxyServer
                 // Return the encrypted buffer.
                 return ret;
             }
-            catch (CryptographicException e)
-            {
+            catch (CryptographicException e) {
                 Console.WriteLine("A Cryptographic error occurred: {0}", e.Message);
                 return null;
             }
@@ -281,10 +259,8 @@ namespace ProxyServer
         /// </summary>
         /// <param name="Data">The byte array to decrypt.</param>
         /// <returns>The decrypted data</returns>
-        public static string DecryptTextFromMemory(byte[] Data)
-        {
-            try
-            {
+        public static string DecryptTextFromMemory(byte[] Data) {
+            try {
                 // Create a new MemoryStream using the passed 
                 // array of encrypted data.
                 MemoryStream msDecrypt = new MemoryStream(Data);
@@ -292,7 +268,7 @@ namespace ProxyServer
                 // Create a CryptoStream using the MemoryStream 
                 // and the passed key and initialization vector (IV).
                 CryptoStream csDecrypt = new CryptoStream(msDecrypt,
-                    new TripleDESCryptoServiceProvider().CreateDecryptor(tDESalg.Key,tDESalg.IV),
+                    new TripleDESCryptoServiceProvider().CreateDecryptor(tDESalg.Key, tDESalg.IV),
                     CryptoStreamMode.Read);
 
                 // Create buffer to hold the decrypted data.
@@ -305,8 +281,7 @@ namespace ProxyServer
                 //Convert the buffer into a string and return it.
                 return new ASCIIEncoding().GetString(fromEncrypt);
             }
-            catch (CryptographicException e)
-            {
+            catch (CryptographicException e) {
                 Console.WriteLine("A Cryptographic error occurred: {0}", e.Message);
                 return null;
             }
@@ -320,25 +295,20 @@ namespace ProxyServer
         ///  <author> Shiran Gabay </author>
         /// <param name="fileString"> The string to parse.</param>
         /// <param name="lst">The list to insert into.</param>
-        public void parseFile(string fileString,List<string> lst)
-        {
-            try
-            {
-                using (StringReader reader = new StringReader(fileString))
-                {
+        public void parseFile(string fileString, List<string> lst) {
+            try {
+                using (StringReader reader = new StringReader(fileString)) {
                     string line;
-                    while ((line = reader.ReadLine()) != null)
-                    {
+                    while ((line = reader.ReadLine()) != null) {
                         lst.Add(line);
                     }
                 }
             }
-            catch (FileNotFoundException ex)
-            {
+            catch (FileNotFoundException ex) {
                 Console.WriteLine(ex.Message);
             }
 
-    
+
         }
 
         /// <summary>
@@ -347,17 +317,14 @@ namespace ProxyServer
         /// <author> Shiran Gabay </author>
         /// <param name="inputFile">The file to encrypt</param>
         /// <param name="outputFile">The file to write the encrypted text into.</param>
-        public void EncryptFile(string inputFile, StreamWriter outputFile)
-        {
+        public void EncryptFile(string inputFile, StreamWriter outputFile) {
 
-            using (outputFile)
-            {
+            using (outputFile) {
                 string line;
                 StreamReader input = new StreamReader(inputFile);
                 line = input.ReadLine();
 
-                while (line != null)
-                {
+                while (line != null) {
                     outputFile.WriteLine(System.Text.ASCIIEncoding.Unicode.GetString(EncryptTextToMemory(line)));
                     outputFile.Flush();
                     line = input.ReadLine();
@@ -371,17 +338,14 @@ namespace ProxyServer
         /// <author> Shiran Gabay </author>
         /// <param name="inputFile">The file to decrypt.</param>
         /// <param name="lst">The list to insert the decrypted lines into.</param>
-        public void DecryptSiteToList(string inputFile, List<string> lst)
-        {
-            using (StreamReader input = new StreamReader(inputFile))
-            {
+        public void DecryptSiteToList(string inputFile, List<string> lst) {
+            using (StreamReader input = new StreamReader(inputFile)) {
                 string line;
                 string dec;
 
                 line = input.ReadLine();
 
-                while (line != null)
-                {
+                while (line != null) {
                     // Decrypt the line.
                     dec = DecryptTextFromMemory(System.Text.ASCIIEncoding.Unicode.GetBytes(line));
                     // Add the decrypted line to the list.
@@ -401,18 +365,15 @@ namespace ProxyServer
         /// <author> Shiran Gabay </author>
         /// <param name="inputFile">The file to decrypt.</param>
         /// <param name="lst">The list to insert the decrypted lines into.</param>
-        public void DecryptIpToList(string inputFile, List<string> lst)
-        {
-            using (StreamReader input = new StreamReader(inputFile))
-            {
+        public void DecryptIpToList(string inputFile, List<string> lst) {
+            using (StreamReader input = new StreamReader(inputFile)) {
                 string line;
                 string dec;
 
                 line = input.ReadLine();
-                
-                while (line != null)
-                {
-                     // Decrypt the line.
+
+                while (line != null) {
+                    // Decrypt the line.
                     dec = DecryptTextFromMemory(System.Text.ASCIIEncoding.Unicode.GetBytes(line));
                     // Remove unneccesary chars. 
                     System.Text.RegularExpressions.Regex nonNumericCharacters = new System.Text.RegularExpressions.Regex(@"\D");
@@ -420,18 +381,17 @@ namespace ProxyServer
                     Regex ip = new Regex(@"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b");
                     MatchCollection result = ip.Matches(dec);
 
-                    if (result.Count > 0)
-                    {
+                    if (result.Count > 0) {
                         // Add the decrypted line to the list.
                         lst.Add(result[0].ToString());
                         // Add the ip to the users list.
                         users.Add(new User(result[0].ToString(), X, Y));
                     }
                     line = input.ReadLine();
-                
+
                 }
             }
-            
+
         }
 
         /// <summary>
@@ -440,12 +400,12 @@ namespace ProxyServer
         /// <author> Shiran Gabay </author>
         /// <param name="strToResponse">The response/</param>
         /// <param name="context">The request context.</param>
-        public static void sendResponse(string strToResponse,HttpListenerContext context){
-                   string response = "<HTML><BODY>"+strToResponse+"</BODY></HTML>";
-                   byte[] b = Encoding.ASCII.GetBytes(response);
-                   context.Response.ContentLength64 = b.Length;
-                   context.Response.OutputStream.Write(b, 0, b.Length);
-                   context.Response.OutputStream.Close();
+        public static void sendResponse(string strToResponse, HttpListenerContext context) {
+            string response = "<HTML><BODY>" + strToResponse + "</BODY></HTML>";
+            byte[] b = Encoding.ASCII.GetBytes(response);
+            context.Response.ContentLength64 = b.Length;
+            context.Response.OutputStream.Write(b, 0, b.Length);
+            context.Response.OutputStream.Close();
         }
 
 
@@ -455,8 +415,7 @@ namespace ProxyServer
         /// listens for new connections and creates threads to handle them.
         /// </summary>
         /// <param name="args">parameters from the user, the first one is the proxy port</param>
-        static void Main(string[] args)
-        {
+        static void Main(string[] args) {
             // Create driver instance.
             Driver driver = new Driver();
             WebRequest.DefaultWebProxy = null;
@@ -470,11 +429,11 @@ namespace ProxyServer
              driver.EncryptFile("a.txt", white);
              white.Close();
              black.Close();*/
-              
+
             // Decrypt the files to the lists.
             driver.DecryptSiteToList(ConfigurationManager.AppSettings["black-list"], driver.Black_list);
             driver.DecryptIpToList(ConfigurationManager.AppSettings["white-list"], driver.White_list);
-          
+
             // Create the stream writers of the white users and black sites.
             white = new StreamWriter(ConfigurationManager.AppSettings["white-list"], true);
             black = new StreamWriter(ConfigurationManager.AppSettings["black-list"], true);
@@ -491,23 +450,23 @@ namespace ProxyServer
             // Create the listener object.
             HttpListener listener = new HttpListener();
 
-            
-            if (args.Count() == 0)
-            {
+
+            if (args.Count() == 0) {
                 Console.WriteLine("You should specify port number!!!");
                 return;
             }
             // args[0]= The proxy port.
             Driver.port = args[0];
             listener.Prefixes.Add("http://*:" + args[0] + "/");
-         
+
             // start the listener...
             listener.Start();
 
             Console.WriteLine("Proxy starts..");
-                      
-            while (true)
-            {
+
+            ThreadPool.SetMaxThreads(4, 0);
+
+            while (true) {
                 // Waiting to get context.
                 HttpListenerContext context = listener.GetContext();
                 Proxy proxy = proxyFactory.getProxy(context);
@@ -517,49 +476,44 @@ namespace ProxyServer
                 string ip = ipWithPort.Substring(0, ipWithPort.IndexOf(':'));
                 // Get the request URL.
                 string uri = context.Request.RawUrl;
-                string findPassword="";
+                string findPassword = "";
 
-               // Check if we got login request. If it is, check the password. If the password equals to the login password
-               // the ip will be added to the white list.
+                // Check if we got login request. If it is, check the password. If the password equals to the login password
+                // the ip will be added to the white list.
 
-               int num1 = uri.IndexOf("loginPassword=");
-                if (num1 > 0)
-                {
+                int num1 = uri.IndexOf("loginPassword=");
+                if (num1 > 0) {
                     findPassword = uri;
-                    findPassword = findPassword.Substring(num1+14);
-                    if (findPassword.Equals(driver.loginPassword))
-                    {
-                        Console.WriteLine("AAAAAAAAAAAA" + ip+"FFFFF");
+                    findPassword = findPassword.Substring(num1 + 14);
+                    if (findPassword.Equals(driver.loginPassword)) {
+                        Console.WriteLine("AAAAAAAAAAAA" + ip + "FFFFF");
                         driver.addWhiteIp(ip);
-                        sendResponse("Successfull login :)",context);
+                        sendResponse("Successfull login :)", context);
                     }
                     else
-                        sendResponse("Unsuccessfull login :(",context);
+                        sendResponse("Unsuccessfull login :(", context);
                     continue;
                 }
-                
-                             
+
+
                 // Write the request to the logger.
                 logger.WriteLine(ip + " is asking for site " + uri);
                 logger.Flush();
-               
+
                 // Check if the uri is in the black list
-                if (driver.inBlackList(uri))
-                {
+                if (driver.inBlackList(uri)) {
                     sendResponse("Unauthorized site", context);
                     continue;
                 }
 
                 // Check if the user is authenticated.
-                if (!driver.inWhiteList(ip))
-                {
+                if (!driver.inWhiteList(ip)) {
                     driver.login(context); // send the user authentication page.
                 }
                 else // The user in the white list.
                 {
                     User tempUser = driver.getUser(ip);
-                    if (tempUser != null)
-                    {
+                    if (tempUser != null) {
                         tempUser.addrequest();
                         if (tempUser.ExceedRequestsIntime()) // check if the user has send more than X requests in Y seconds.
                         {
@@ -567,14 +521,17 @@ namespace ProxyServer
                             sendResponse("You exceeded the max packets. Connect again!", context);
                         }
                         else // run the thread who response to the user.
-                            new Thread(new ThreadStart(proxy.run)).Start();
+                            ThreadPool.QueueUserWorkItem(new WaitCallback(StartThreadCallBack),
+                                new Thread(new ThreadStart(proxy.run)));
                     }
                     else // Exceed the maximum number of requests.
                         sendResponse("You exceeded the max packets. Connect again!", context);
                 }
             }
         }
+
+        static void StartThreadCallBack(Object stateInfo) {
+            ((Thread)stateInfo).Start();
+        }
     }
 }
-
-
