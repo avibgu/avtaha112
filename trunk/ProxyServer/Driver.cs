@@ -53,13 +53,7 @@ namespace ProxyServer
             // Create the users list
             users = new List<User>();
 
-            // Set the external proxy IP
-            try
-            {
-                WebClient client = new WebClient();
-                this.proxy_ip = client.DownloadString("http://whatismyip.com/automation/n09230945.asp");
-            }
-            catch (Exception) { this.proxy_ip = "127.0.0.1"; }
+            
 
             // Run the init function to read the configuration parameters.
             init();
@@ -116,7 +110,13 @@ namespace ProxyServer
 
         public string getProxyIp()
         {
-            return this.proxy_ip;
+            // Set the external proxy IP
+            try
+            {
+                WebClient client = new WebClient();
+                return client.DownloadString("http://whatismyip.com/automation/n09230945.asp");
+            }
+            catch (Exception) {  return "127.0.0.1"; }
         }
 
         /// <summary>
@@ -203,6 +203,7 @@ namespace ProxyServer
         {
            for (int i=0; i < White_list.Count; ++i)
             {
+                Console.WriteLine("INWHITELIST" + White_list[i] + "DGFD");
                 if (White_list[i].Contains(ip))
                     return true;
             }
@@ -217,12 +218,17 @@ namespace ProxyServer
         /// <param name="context">The context of the request.</param>
         public void login(HttpListenerContext context)
         {
-               string response = System.IO.File.ReadAllText("..\\..\\LoginPage.htm");
-               response.Replace("127.0.0.1", getProxyIp());
-               byte[] b = Encoding.UTF8.GetBytes(response);
-               context.Response.ContentLength64 = b.Length;
-               context.Response.OutputStream.Write(b, 0, b.Length);
-               context.Response.OutputStream.Close();
+            try
+            {
+                string response = System.IO.File.ReadAllText("..\\..\\LoginPage.htm");
+                string ip = getProxyIp();
+                response = response.Replace("127.0.0.1", getProxyIp());
+                byte[] b = Encoding.UTF8.GetBytes(response);
+                context.Response.ContentLength64 = b.Length;
+                context.Response.OutputStream.Write(b, 0, b.Length);
+                context.Response.OutputStream.Close();
+            }
+            catch { }
         }
 
 
@@ -523,6 +529,7 @@ namespace ProxyServer
                     findPassword = findPassword.Substring(num1+14);
                     if (findPassword.Equals(driver.loginPassword))
                     {
+                        Console.WriteLine("AAAAAAAAAAAA" + ip+"FFFFF");
                         driver.addWhiteIp(ip);
                         sendResponse("Successfull login :)",context);
                     }

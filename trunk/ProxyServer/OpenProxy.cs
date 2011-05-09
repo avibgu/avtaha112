@@ -243,20 +243,32 @@ namespace ProxyServer
                             break;
 
                         case "Keep-Alive":
-                            getHttpWReq().Headers.Add("Keep-Alive", value);
-                            int keep = int.Parse(value);
-                        if (keep != 0)
-                            getHttpWReq().KeepAlive = true;
-                        else
-                            getHttpWReq().KeepAlive = false;
+                            try
+                            {
+                                getHttpWReq().Headers.Add("Keep-Alive", value);
+                                int keep = int.Parse(value);
+                                if (keep != 0)
+                                    getHttpWReq().KeepAlive = true;
+                                else
+                                    getHttpWReq().KeepAlive = false;
+                            }
+                            catch { }
                             break;
 
                         case "Accept":
-                            getHttpWReq().Accept += "," + value;
+                            try
+                            {
+                                getHttpWReq().Accept += "," + value;
+                            }
+                            catch { }
                             break;
 
                         case "Accept-Charset":
-                            getHttpWReq().Headers.Add("Accept-Charset", value);
+                            try
+                            {
+                                getHttpWReq().Headers.Add("Accept-Charset", value);
+                            }
+                            catch { }
                             break;
 
                         case "Accept-Encoding":
@@ -264,27 +276,51 @@ namespace ProxyServer
                             break;
 
                         case "Accept-Language":
-                            getHttpWReq().Headers.Add("Accept-Language", value);
+                            try
+                            {
+                                getHttpWReq().Headers.Add("Accept-Language", value);
+                            }
+                            catch { }
                             break;
 
                         case "Host":
-                            getHttpWReq().Host = value;
+                            try
+                            {
+                                getHttpWReq().Host = value;
+                            }
+                            catch { }
                             break;
 
                         case "Referer":
-                            getHttpWReq().Referer = value;
+                            try
+                            {
+                                getHttpWReq().Referer = value;
+                            }
+                            catch { }
                             break;
 
                         case "User-Agent":
-                            if (getHttpWReq().UserAgent == null)
-                                getHttpWReq().UserAgent = values[0].Substring(0,values[0].IndexOf(" "));
+                            try
+                            {
+                                if (getHttpWReq().UserAgent == null)
+                                {
+                                    int num = values[0].IndexOf(" ");
+                                    if (num >= 0)
+                                    getHttpWReq().UserAgent = values[0].Substring(0, num);
+                                }
+                            }
+                            catch { }
                             break;
 
                         case "Transfer-Encoding":
-                            if (0 == value.CompareTo("chunked"))
-                                getHttpWReq().SendChunked = true;
+                            try
+                            {
+                                if (0 == value.CompareTo("chunked"))
+                                    getHttpWReq().SendChunked = true;
 
-                            getHttpWReq().TransferEncoding = value;
+                                getHttpWReq().TransferEncoding = value;
+                            }
+                            catch { }
                             break;
 
                         case "Content-Length":
@@ -295,7 +331,11 @@ namespace ProxyServer
                             break;
 
                         case "Content-Type":
-                            getHttpWReq().ContentType = value;
+                            try
+                            {
+                                getHttpWReq().ContentType = value;
+                            }
+                            catch { }
                             break;
 
                         case "Date":
@@ -305,11 +345,19 @@ namespace ProxyServer
                             break;
 
                         case "Expect":
-                            getHttpWReq().Expect = value;
+                            try
+                            {
+                                getHttpWReq().Expect = value;
+                            }
+                            catch { }
                             break;
 
                         case "Connection":
-                            getHttpWReq().Connection = value;
+                            try
+                            {
+                                getHttpWReq().Connection = value;
+                            }
+                            catch { }
                             break;
 
                         case "If-Modified-Since":
@@ -319,15 +367,28 @@ namespace ProxyServer
                             break;
 
                         case "X-Powered-By":
-                            getHttpWReq().Headers.Add("X-Powered-By", value);
+                            try
+                            {
+                                getHttpWReq().Headers.Add("X-Powered-By", value);
+                            }
+                            catch { }
+                           
                             break;
 
                         case "Cache-Control":
-                            getHttpWReq().Headers.Add("Cache-Control", value);
+                            try
+                            {
+                                getHttpWReq().Headers.Add("Cache-Control", value);
+                            }
+                            catch { }
                             break;
 
                         case "Origin":
-                            getHttpWReq().Headers.Add("Origin", value);
+                            try
+                            {
+                                getHttpWReq().Headers.Add("Origin", value);
+                            }
+                            catch { }
                             break;
 
                         default:
