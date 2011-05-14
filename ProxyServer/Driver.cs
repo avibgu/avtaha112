@@ -185,8 +185,7 @@ namespace ProxyServer {
 
         public bool inWhiteList(string ip) {
             for (int i = 0; i < White_list.Count; ++i) {
-                Console.WriteLine("INWHITELIST" + White_list[i] + "DGFD");
-                if (White_list[i].Contains(ip))
+               if (White_list[i].Contains(ip))
                     return true;
             }
 
@@ -464,7 +463,7 @@ namespace ProxyServer {
 
             Console.WriteLine("Proxy starts..");
 
-            ThreadPool.SetMaxThreads(4, 0);
+            ThreadPool.SetMaxThreads(17,7);
 
             while (true) {
                 // Waiting to get context.

@@ -76,7 +76,7 @@ namespace ProxyServer
             setTheCookies();
 
             //  Print the headers
-            printWebRequestHeaders();
+          //  printWebRequestHeaders();
 
             // Forward the request
             bool ans;
@@ -362,7 +362,7 @@ namespace ProxyServer
 
                         case "If-Modified-Since":
                             try {
-                                getHttpWReq().IfModifiedSince = DateTime.Parse(value);
+                    //            getHttpWReq().IfModifiedSince = DateTime.Parse(value);
                             } catch {}
                             break;
 
