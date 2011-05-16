@@ -441,10 +441,16 @@ namespace ProxyServer {
 
             // Check the state of the proxy - open or anonymous.
             if (driver.getState().Equals("open"))
+            {
                 proxyFactory = new OpenProxyFactory();
+                Console.WriteLine("open state");
+            }
 
             else
+            {
                 proxyFactory = new AnonProxyFactory();
+                Console.WriteLine("Anonymous state");
+            }
 
             // Create the listener object.
             HttpListener listener = new HttpListener();
@@ -463,7 +469,9 @@ namespace ProxyServer {
 
             Console.WriteLine("Proxy starts..");
 
-            ThreadPool.SetMaxThreads(17,7);
+            // Sets the number of requests to the thread pool that can be active concurrently.
+            // All requests above that number remain queued until thread pool threads become available.
+            ThreadPool.SetMaxThreads(4,0);
 
             while (true) {
                 // Waiting to get context.
