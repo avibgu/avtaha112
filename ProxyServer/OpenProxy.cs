@@ -238,11 +238,7 @@ namespace ProxyServer
                 foreach (string value in values) {
                    switch (header) {
 
-                     case "Proxy-Connection":
-                            //    getHttpWReq().Headers.Add("Proxy-Connection", valueStr);
-                            break;
-
-                        case "Keep-Alive":
+                         case "Keep-Alive":
                             try
                             {
                                 getHttpWReq().Headers.Add("Keep-Alive", value);
@@ -269,10 +265,6 @@ namespace ProxyServer
                                 getHttpWReq().Headers.Add("Accept-Charset", value);
                             }
                             catch { }
-                            break;
-
-                        case "Accept-Encoding":
-                            //getHttpWReq().Headers.Add("Accept-Encoding", value);
                             break;
 
                         case "Accept-Language":
@@ -358,12 +350,6 @@ namespace ProxyServer
                                 getHttpWReq().Connection = value;
                             }
                             catch { }
-                            break;
-
-                        case "If-Modified-Since":
-                            try {
-                    //            getHttpWReq().IfModifiedSince = DateTime.Parse(value);
-                            } catch {}
                             break;
 
                         case "X-Powered-By":

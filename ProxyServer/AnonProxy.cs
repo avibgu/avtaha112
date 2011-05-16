@@ -16,6 +16,7 @@ namespace ProxyServer {
         /// <author>Avi Digmi</author>
         public AnonProxy(HttpListenerContext context)
             : base(context) {
+         
         }
 
         /// <summary>
@@ -27,6 +28,7 @@ namespace ProxyServer {
         /// <author>Avi Digmi</author>
         public override void run() {
 
+      
             /*
              * take the original request from the client to the remote server
              * and forward it as is to the remote server,
@@ -53,9 +55,6 @@ namespace ProxyServer {
 
             //  Sets a default User-Agent
             getHttpWReq().UserAgent = "Mozilla/5.0";
-
-            //  Print the headers
-            printWebRequestHeaders();
 
             // Forward the request
             bool ans;
