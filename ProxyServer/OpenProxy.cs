@@ -439,7 +439,7 @@ namespace ProxyServer
             }
             catch (Exception e) {
 
-                Console.WriteLine("forwardRegularRequest() ERROR:\n" + e.Message);
+             //   Console.WriteLine("forwardRegularRequest() ERROR:\n" + e.Message);
                 return false;
             }
 
@@ -468,7 +468,7 @@ namespace ProxyServer
             }
             catch (Exception e) {
 
-                Console.WriteLine("forwardChunckedRequest() ERROR:\n" + e.Message);
+               // Console.WriteLine("forwardChunckedRequest() ERROR:\n" + e.Message);
                 return false;
             }
             finally {
