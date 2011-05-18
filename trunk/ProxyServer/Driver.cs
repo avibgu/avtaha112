@@ -471,7 +471,7 @@ namespace ProxyServer {
 
             // Sets the number of requests to the thread pool that can be active concurrently.
             // All requests above that number remain queued until thread pool threads become available.
-            ThreadPool.SetMaxThreads(4,0);
+            ThreadPool.SetMaxThreads(4,4);
 
             while (true) {
                 // Waiting to get context.
@@ -493,7 +493,6 @@ namespace ProxyServer {
                     findPassword = uri;
                     findPassword = findPassword.Substring(num1 + 14);
                     if (findPassword.Equals(driver.loginPassword)) {
-                        Console.WriteLine("AAAAAAAAAAAA" + ip + "FFFFF");
                         driver.addWhiteIp(ip);
                         sendResponse("Successfull login :)", context);
                     }
